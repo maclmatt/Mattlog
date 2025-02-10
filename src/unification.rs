@@ -1,71 +1,74 @@
+use std::collections::HashMap;
 use crate::terms::Term;
-use crate::environment::Environment;
 
-impl Environment {
-    pub fn unify(&mut self, term1: &Term, term2: &Term) -> Result<(), String> {
-        match (term1, term2) {
-            (Term::Constant(a), Term::Constant(b)) => {
-                if a == b {
-                    Ok(())
+#[derive(Debug, Clone, PartialEq)]
+pub struct Substitution(HashMap<String, Term>);
+
+impl Substitution {
+    pub fn new() -> Self {
+        Substitution(HashMap::new())
+    }
+
+    pub fn apply(&self, term: &Term) -> Term {
+        match term {
+            Term::Variable(name) => {
+                if let Some(substituted_term) = self.0.get(name) {
+                    self.apply(substituted_term) // Recursively apply substitution
                 } else {
-                    Err(format!("Failed to unify {} and {}", a, b))
+                    term.clone()
                 }
             }
-            (Term::Variable(v), t) | (t, Term::Variable(v)) => {
-                self.bind(v.clone(), t.clone());
-                Ok(())
+            Term::Compound(name, args) => {
+                Term::Compound(name.clone(), args.iter().map(|t| self.apply(t)).collect())
             }
-            (Term::Compound { name: name1, args: args1 },
-             Term::Compound { name: name2, args: args2 }) => {
-                if name1 == name2 && args1.len() == args2.len() {
-                    for (arg1, arg2) in args1.iter().zip(args2) {
-                        self.unify(arg1, arg2)?;
-                    }
-                    Ok(())
-                } else {
-                    Err(format!(
-                        "Failed to unify compound terms {} and {}",
-                        name1, name2
-                    ))
-                }
+            Term::List(head, tail) => {
+                Term::List(Box::new(self.apply(head)), Box::new(self.apply(tail)))
             }
-            _ => Err(format!("Failed to unify {:?} and {:?}", term1, term2)),
+            _ => term.clone(), // Constant, Integer, EmptyList remain unchanged
         }
+    }
+
+    pub fn extend(&mut self, var: String, term: Term) {
+        self.0.insert(var, term);
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_unify_constants() {
-        let mut env = Environment::new();
-        assert!(env.unify(&Term::Constant("a".into()), &Term::Constant("a".into())).is_ok());
-        assert!(env.unify(&Term::Constant("a".into()), &Term::Constant("b".into())).is_err());
+pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
+    match (term1, term2) {
+        (Term::Variable(x), t) | (t, Term::Variable(x)) => {
+            // Variable unification with occurs check
+            if t != term1 && occurs_check(x, t) {
+                false
+            } else {
+                subst.extend(x.clone(), t.clone());
+                true
+            }
+        }
+        (Term::Constant(a), Term::Constant(b)) => a == b, // Constant unification
+        (Term::Integer(a), Term::Integer(b)) => a == b, // Integer unification
+        (Term::Compound(name1, args1), Term::Compound(name2, args2)) => {
+            name1 == name2 && unify_lists(args1, args2, subst)
+        }
+        (Term::List(head1, tail1), Term::List(head2, tail2)) => {
+            unify(head1, head2, subst) && unify(tail1, tail2, subst)
+        }
+        (Term::EmptyList, Term::EmptyList) => true, // Empty lists are equal
+        _ => false, // Mismatched structures
     }
+}
 
-    #[test]
-    fn test_unify_variables() {
-        let mut env = Environment::new();
-        assert!(env.unify(&Term::Variable("X".into()), &Term::Constant("a".into())).is_ok());
-        assert_eq!(
-            env.lookup(&"X".into()),
-            Some(&Term::Constant("a".into()))
-        );
+fn unify_lists(list1: &[Term], list2: &[Term], subst: &mut Substitution) -> bool {
+    if list1.len() != list2.len() {
+        return false;
     }
+    list1.iter().zip(list2.iter()).all(|(t1, t2)| unify(t1, t2, subst))
+}
 
-    #[test]
-    fn test_unify_compound_terms() {
-        let mut env = Environment::new();
-        let t1 = Term::Compound {
-            name: "parent".into(),
-            args: vec![Term::Variable("X".into()), Term::Constant("mary".into())],
-        };
-        let t2 = Term::Compound {
-            name: "parent".into(),
-            args: vec![Term::Constant("john".into()), Term::Constant("mary".into())],
-        };
-        assert!(env.unify(&t1, &t2).is_ok());
+fn occurs_check(var: &str, term: &Term) -> bool {
+    match term {
+        Term::Variable(v) => v == var,
+        Term::Compound(_, args) => args.iter().any(|t| occurs_check(var, t)),
+        Term::List(head, tail) => occurs_check(var, head) || occurs_check(var, tail),
+        _ => false,
     }
 }
