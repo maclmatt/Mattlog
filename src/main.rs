@@ -4,56 +4,50 @@ mod solver;
 mod terms;
 mod unification;
 
-//use database::Database;
-//use solver::solve;
+use database::Database;
+use solver::solve;
 use terms::Term;
+
+use crate::solver::solve;
+use crate::terms::Query;
 
 #[allow(unused_imports)]
 use parser::tree::{ TermKind, Clause, variable, atom, compound, conjunct, fact, rule };
 use parser::parser::{ parse, parse_query };
-use parser::solver::{ Database, Query, Partial };
 
 fn main() {
+    // Define a simple Prolog program with a fact.
     let input = "
-        nth([X|Xs], 0, X).
-        nth([S|Xs], N, Y) :- is(M, N - 1), nth(Xs, M, Y).
+        parent(alice, bob).
     ";
 
+    // Define a query that checks if Alice is Bob's parent.
     let query_string = "
-        nth([1, 2, 3, 4], 2, X).
+        parent(alice, bob).
     ";
 
+    // Parse the Prolog program into structured clauses.
+    let clauses = parse(input).expect("Failed to parse program.");
+    println!("Parsed clauses: {:?}", clauses);
 
-    let clauses = parse(input).unwrap();
-    println!("{:?}", clauses);
+    // Create a database from parsed clauses.
     let db = Database::new(clauses);
 
-    let query_term = parse_query(query_string).unwrap();
-    println!("{:?}", query_term);
+    // Parse the query into a structured term.
+    let query_term = parse_query(query_string).expect("Failed to parse query.");
+    println!("Parsed query: {:?}", query_term);
+
+    // Create a query object.
     let query = Query::new(query_term);
 
-    //if let Some(result) = solve(&query, &db) {
-    //    println!("Solution: {:?}", result);
-    //} else {
-    //    println!("No solution found.");
-    //}
+    // Try solving the query using `solve`.
+    if let Some(result) = solve(&query, &db) {
+        println!("Solution: {:?}", result);
+    } else {
+        println!("No solution found.");
+    }
 
-    let input = "
-        true_fact.
-    ";
-
-    let query_string = "
-        true_fact.
-    ";
-
-    let clauses = parse(input).unwrap();
-    println!("{:?}", clauses);
-    let db = Database::new(clauses);
-
-    let query_term = parse_query(query_string).unwrap();
-    println!("{:?}", query_term);
-    let query = Query::new(query_term);
-
+    // Try solving the query step-by-step.
     match query.solve_from(&db, 0) {
         Some(partial) => println!("Result: \x1b[32m{}\x1b[0m", partial.result),
         None => println!("Result: \x1b[31mfalse\x1b[0m"),

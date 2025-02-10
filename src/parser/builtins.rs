@@ -1,8 +1,8 @@
 
 use crate::parser::tree::{ Term, TermKind, atom, integer };
-use crate::parser::solver::{ Database, Query, Partial, Bindings, simplify_term, unify_term, compare_term };
+use crate::parser::solver::{ DatabaseParser, Query, Partial, Bindings, simplify_term, unify_term, compare_term };
 
-pub type BuiltinPredicate = fn(&Database, &Term, &Bindings, usize) -> Option<Partial>;
+pub type BuiltinPredicate = fn(&DatabaseParser, &Term, &Bindings, usize) -> Option<Partial>;
 
 pub fn lookup_builtin(term: &Term) -> Option<BuiltinPredicate> {
     let name = match &**term {
@@ -46,27 +46,27 @@ pub fn lookup_builtin(term: &Term) -> Option<BuiltinPredicate> {
     }
 }
 
-fn builtin_cut_0(_db: &Database, _term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_cut_0(_db: &DatabaseParser, _term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     Some(Partial::new(atom("true"), bindings.clone(), at_rule))
 }
 
-fn builtin_fail_0(_db: &Database, _term: &Term, _bindings: &Bindings, _at_rule: usize) -> Option<Partial> {
+fn builtin_fail_0(_db: &DatabaseParser, _term: &Term, _bindings: &Bindings, _at_rule: usize) -> Option<Partial> {
     None
 }
 
-fn builtin_nl_0(_db: &Database, _term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_nl_0(_db: &DatabaseParser, _term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     println!("");
     Some(Partial::new(atom("true"), bindings.clone(), at_rule))
 }
 
-fn builtin_write_1(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_write_1(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     print!("{}", args[0]);
     Some(Partial::new(atom("true"), bindings.clone(), at_rule))
 }
 
-fn builtin_is_2(db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_is_2(db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     let rhs = simplify_term(db, &args[1], bindings, at_rule).unwrap();
@@ -80,7 +80,7 @@ fn builtin_is_2(db: &Database, term: &Term, bindings: &Bindings, at_rule: usize)
     }
 }
 
-fn builtin_equal_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_equal_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Comparing {} with {}", &args[0], &args[1]);
@@ -91,7 +91,7 @@ fn builtin_equal_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: us
     }
 }
 
-fn builtin_not_equal_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_not_equal_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Comparing {} with {}", &args[0], &args[1]);
@@ -102,7 +102,7 @@ fn builtin_not_equal_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule
     }
 }
 
-fn builtin_less_than_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_less_than_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Comparing {} with {}", &args[0], &args[1]);
@@ -112,7 +112,7 @@ fn builtin_less_than_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule
     }
 }
 
-fn builtin_greater_than_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_greater_than_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Comparing {} with {}", &args[0], &args[1]);
@@ -122,7 +122,7 @@ fn builtin_greater_than_2(_db: &Database, term: &Term, bindings: &Bindings, at_r
     }
 }
 
-fn builtin_less_than_or_equal_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_less_than_or_equal_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Comparing {} with {}", &args[0], &args[1]);
@@ -132,7 +132,7 @@ fn builtin_less_than_or_equal_2(_db: &Database, term: &Term, bindings: &Bindings
     }
 }
 
-fn builtin_greater_than_or_equal_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_greater_than_or_equal_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Comparing {} with {}", &args[0], &args[1]);
@@ -142,7 +142,7 @@ fn builtin_greater_than_or_equal_2(_db: &Database, term: &Term, bindings: &Bindi
     }
 }
 
-fn builtin_add_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_add_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Adding {} with {}", &args[0], &args[1]);
@@ -152,7 +152,7 @@ fn builtin_add_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usiz
     }
 }
 
-fn builtin_subtract_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_subtract_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Subtracting {} with {}", &args[0], &args[1]);
@@ -162,7 +162,7 @@ fn builtin_subtract_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule:
     }
 }
 
-fn builtin_multiply_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_multiply_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Adding {} with {}", &args[0], &args[1]);
@@ -172,7 +172,7 @@ fn builtin_multiply_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule:
     }
 }
 
-fn builtin_divide_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_divide_2(_db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let args = term.get_args()?;
 
     println!("Adding {} with {}", &args[0], &args[1]);
@@ -182,7 +182,7 @@ fn builtin_divide_2(_db: &Database, term: &Term, bindings: &Bindings, at_rule: u
     }
 }
 
-fn builtin_call(db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+fn builtin_call(db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     let (first, args) = term.get_args()?.split_at(1);
 
     let result = match &*first[0] {

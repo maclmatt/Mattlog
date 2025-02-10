@@ -63,13 +63,13 @@ impl Bindings {
     }
 }
 
-pub struct Database {
+pub struct DatabaseParser {
     clauses: Vec<Clause>,
 }
 
-impl Database {
+impl DatabaseParser {
     pub fn new(clauses: Vec<Clause>) -> Self {
-        Database {
+        DatabaseParser {
             clauses,
         }
     }
@@ -104,11 +104,11 @@ impl Query {
     }
 
     #[allow(dead_code)]
-    pub fn solve(&self, db: &Database) -> Option<Partial> {
+    pub fn solve(&self, db: &DatabaseParser) -> Option<Partial> {
         self.solve_from(db, 0)
     }
 
-    pub fn solve_from(&self, db: &Database, at: usize) -> Option<Partial> {
+    pub fn solve_from(&self, db: &DatabaseParser, at: usize) -> Option<Partial> {
         if at >= db.clauses.len() {
             return None;
         }
@@ -150,7 +150,7 @@ impl Query {
         None
     }
 
-    fn _solve_expression(&self, db: &Database, init_bindings: &Bindings, expr: &Expr, at_rule: usize) -> Option<Partial> {
+    fn _solve_expression(&self, db: &DatabaseParser, init_bindings: &Bindings, expr: &Expr, at_rule: usize) -> Option<Partial> {
         match &**expr {
             ExprKind::Term(term) => {
                 let dependent = Query { goal: init_bindings.substitute(term.clone()) };
@@ -257,7 +257,7 @@ pub fn unify_term(term1: &Term, term2: &Term) -> Option<(Term, Bindings)> {
     }
 }
 
-pub fn simplify_term(db: &Database, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
+pub fn simplify_term(db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     if let Some(func) = lookup_builtin(term) {
         match func(db, term, bindings, at_rule) {
             Some(partial) => simplify_term(db, &partial.result, &partial.bindings, partial.rule),
