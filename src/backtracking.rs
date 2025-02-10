@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::term::Term;
+use crate::terms::Term;
 
 pub struct ChoicePoint {
     pub env: Environment,

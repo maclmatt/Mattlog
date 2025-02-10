@@ -1,4 +1,4 @@
-use crate::term::Term;
+use crate::terms::Term;
 use crate::environment::Environment;
 
 impl Environment {

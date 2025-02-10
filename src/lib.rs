@@ -1,4 +1,4 @@
-pub mod term;
+pub mod terms;
 pub mod environment;
 pub mod unification;
 pub mod backtracking;

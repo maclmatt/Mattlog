@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::term::Term;
+use crate::terms::Term;
 
 pub struct Environment {
     bindings: HashMap<String, Term>,
