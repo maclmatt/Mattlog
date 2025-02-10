@@ -31,6 +31,12 @@ impl Term {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum Clause {
+    Fact(Term),
+    Rule(Term, Term),
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
