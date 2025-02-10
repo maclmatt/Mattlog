@@ -31,6 +31,11 @@ impl Substitution {
     pub fn extend(&mut self, var: String, term: Term) {
         self.0.insert(var, term);
     }
+
+    pub fn allow_merge(&mut self, other: &Substitution) {
+        self.0.extend(other.0.clone());
+    }
+
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {

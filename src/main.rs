@@ -2,6 +2,7 @@ pub mod parser;
 mod database;
 mod solver;
 mod terms;
+mod unification;
 
 //use database::Database;
 //use solver::solve;
