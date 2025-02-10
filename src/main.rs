@@ -16,7 +16,7 @@ fn main() {
         a.
     ";
 
-    let query_string = "a.";
+    let query_string = "b.";
 
     // Parse input into clauses
     let clauses = parse(input).expect("Failed to parse input.");
@@ -65,6 +65,16 @@ fn main() {
                     println!("Solution: {:?}", solution);
                 } else {
                     println!("No solution found.");
+                }
+                //Boolean response (TODO: Working progress)
+                if let Some(substitutions) = solve(&query, &db) {
+                    if substitutions.is_empty() {
+                        println!("true"); // Query matched exactly (no variables)
+                    } else {
+                        println!("true"); // A valid substitution was found
+                    }
+                } else {
+                    println!("false"); // No valid unification possible
                 }
             }
             Err(_) => println!("Invalid query format."),
