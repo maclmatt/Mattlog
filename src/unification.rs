@@ -74,7 +74,7 @@ impl Substitution {
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
-    println!("Attempting to unify {:?} and {:?}", term1, term2);
+    //println!("Attempting to unify {:?} and {:?}", term1, term2);
     match (term1, term2) {
         (Term::Variable(x), t) | (t, Term::Variable(x)) => {
             if t != term1 && occurs_check(x, t) {

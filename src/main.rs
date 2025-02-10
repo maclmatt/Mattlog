@@ -8,95 +8,73 @@ use database::Database;
 use parser::parser::{parse, parse_query};
 use solver::solve;
 use terms::{Clause, Term, Expression};
-use std::io;
+use std::fs;
+use std::io::{self, Write};
 
 fn main() {
-    // Sample Prolog-like program as input
-    let input = "
-        equal(X, X).
-    ";
+    // Ask user for prolog filename
+    print!("Enter the Prolog file name: ");
+    io::stdout().flush().unwrap();
 
-    let query_string = "equal(a, b).";
+    let mut filename = String::new();
+    io::stdin().read_line(&mut filename).unwrap();
+    let filename = filename.trim();
 
+    let input = fs::read_to_string(filename).expect("Failed to read the file");
+    
     // Parse input into clauses
-    let clauses = parse(input).expect("Failed to parse input.");
+    let clauses = parse(&input).expect("Failed to parse input.");
     let db = Database::new(clauses.into_iter().map(Clause::from_tree_clause).collect());
 
-    // Parse query
-    let query_term = parse_query(query_string).expect("Failed to parse query.");
-    let query = Term::from_tree_term(query_term);
+    println!("Loaded Prolog database from '{}'.", filename);
 
-    println!("Database: {:?}", db);
-    println!("Query: {:?}", query);
-
-    // Convert query from Term to Expression
-    let query_expr = Expression::from_term(query);  
-    // Solve query
-    if let Some(solution) = solve(&query_expr, &db) {
-        println!("Solution: {:?}", solution);
-    } else {
-        println!("No solution found.");
-    }
-    //Boolean response (TODO: Working progress)
-    if let Some(substitutions) = solve(&query_expr, &db) {
-        if substitutions.is_empty() {
-            println!("true"); // Query matched exactly (no variables)
-        } else {
-            println!("true"); // A valid substitution was found
-        }
-    } else {
-        println!("false"); // No valid unification possible
-    }
-
-    //print substitution
-    if let Some(solution) = solve(&query_expr, &db) {
-        if let Some(x_term) = solution.get("X") {  // Use the new `get` method
-            let resolved_x = solution.resolve(x_term); // Resolve to its final value
-            match resolved_x {
-                Term::Integer(n) => println!("X = {}", n),   // Print just the number
-                Term::Constant(c) => println!("X = {}", c), // Print constants directly
-                Term::List(_, _) | Term::Compound(_, _) => println!("X = {:?}", resolved_x), // Print lists/compounds fully
-                _ => println!("X = {:?}", resolved_x), // Fallback case
-            }
-        }
-    } else {
-        println!("No solution found.");
-    }
-
-    // Interactive mode
+    // Interactive query loop
     loop {
-        println!("\nEnter a query (or type 'exit' to quit):");
+        print!("\nEnter a query (or type 'exit' to quit): ");
+        io::stdout().flush().unwrap(); // Flush output to ensure prompt appears
 
         let mut user_query = String::new();
         io::stdin().read_line(&mut user_query).expect("Failed to read input");
 
         let user_query = user_query.trim();
         if user_query.eq_ignore_ascii_case("exit") {
+            println!("Exiting interactive mode.");
             break;
         }
 
+        // Parse query
         match parse_query(user_query) {
             Ok(parsed_query) => {
                 let query = Term::from_tree_term(parsed_query);
-                if let Some(solution) = solve(&query_expr, &db) {
-                    println!("Solution: {:?}", solution);
-                } else {
-                    println!("No solution found.");
-                }
-                //Boolean response (TODO: Working progress)
-                if let Some(substitutions) = solve(&query_expr, &db) {
-                    if substitutions.is_empty() {
-                        println!("true"); // Query matched exactly (no variables)
-                    } else {
-                        println!("true"); // A valid substitution was found
+                let query_expr = Expression::from_term(query);
+
+                // Solve the query
+                match solve(&query_expr, &db) {
+                    Some(solution) => {
+                        if solution.is_empty() {
+                            println!("true"); // Query matched exactly (no variables)
+                        } else {
+                            println!("Substitutions: {:?}", solution);
+                            println!("true");
+                        }
+
+                        // If there's a substitution for "X", print it
+                        if let Some(x_term) = solution.get("X") {
+                            let resolved_x = solution.resolve(x_term);
+                            match resolved_x {
+                                Term::Integer(n) => println!("X = {}", n),
+                                Term::Constant(c) => println!("X = {}", c),
+                                _ => println!("X = {:?}", resolved_x), // For complex terms
+                            }
+                        }
                     }
-                } else {
-                    println!("false"); // No valid unification possible
+                    None => {
+                        println!("No solution found.");
+                        println!("false");
+                    }
                 }
             }
-            Err(_) => println!("Invalid query format."),
+            Err(_) => println!("Invalid query format. Try again."),
         }
-        println!("Database: {:?}", db);
     }
-    println!("Database: {:?}", db);
 }
