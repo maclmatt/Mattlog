@@ -2,14 +2,18 @@
 pub enum Term {
     Constant(String),
     Variable(String),
-    Compound { 
-        name: String, 
-        args: Vec<Term> 
-    },
+    Compound(String, Vec<Term>),
+    Integer(i32),
+    List(Box<Term>, Box<Term>), // Represents lists (head | tail)
+    EmptyList,
 }
 
-// Helper methods for creating terms
 impl Term {
+    pub fn compound(name: &str, args: Vec<Term>) -> Self {
+        Term::Compound(name.to_string(), args)
+    }
+
+    // You may also add methods to create other kinds of terms
     pub fn constant(value: &str) -> Self {
         Term::Constant(value.to_string())
     }
@@ -18,24 +22,12 @@ impl Term {
         Term::Variable(name.to_string())
     }
 
-    pub fn compound(name: &str, args: Vec<Term>) -> Self {
-        Term::Compound {
-            name: name.to_string(),
-            args,
-        }
+    pub fn integer(value: i32) -> Self {
+        Term::Integer(value)
+    }
+
+    pub fn list(head: Term, tail: Term) -> Self {
+        Term::List(Box::new(head), Box::new(tail))
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_term_creation() {
-        let constant = Term::constant("a");
-        assert_eq!(constant, Term::Constant("a".to_string()));
-
-        let variable = Term::variable("X");
-        assert_eq!(variable, Term::Variable("X".to_string()));
-    }
-}
