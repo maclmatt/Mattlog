@@ -31,3 +31,36 @@ impl Term {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_term_creation() {
+        // Testing constants
+        let constant = Term::constant("a");
+        assert_eq!(constant, Term::Constant("a".to_string()));
+
+        // Testing variables
+        let variable = Term::variable("X");
+        assert_eq!(variable, Term::Variable("X".to_string()));
+
+        // Testing compound terms
+        let compound = Term::compound("nth", vec![
+            Term::variable("X"), 
+            Term::integer(0), 
+            Term::variable("X")
+        ]);
+        assert_eq!(compound, Term::Compound("nth".to_string(), vec![
+            Term::Variable("X".to_string()), 
+            Term::Integer(0), 
+            Term::Variable("X".to_string())
+        ]));
+
+        // Testing a list (Head | Tail)
+        let list = Term::list(Term::integer(1), Term::EmptyList);
+        assert_eq!(list, Term::List(Box::new(Term::Integer(1)), Box::new(Term::EmptyList)));
+    }
+}
+
+
