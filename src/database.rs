@@ -1,5 +1,6 @@
 use crate::terms::{Clause, Term};
 
+#[derive(Debug)]
 pub struct Database {
     pub clauses: Vec<Clause>,
 }

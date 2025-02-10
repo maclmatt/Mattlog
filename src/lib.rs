@@ -5,3 +5,4 @@ pub mod bytecode;
 pub mod interpreter;
 pub mod unification;
 pub mod database;
+pub mod parser;

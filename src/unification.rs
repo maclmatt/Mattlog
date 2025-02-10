@@ -36,6 +36,10 @@ impl Substitution {
         self.0.extend(other.0.clone());
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {

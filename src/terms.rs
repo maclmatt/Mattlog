@@ -1,9 +1,11 @@
+use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, variable, atom, compound, conjunct, fact, rule, Term as TreeTerm, Expr as TreeExpr };
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Term {
     Constant(String),
     Variable(String),
     Compound(String, Vec<Term>),
-    Integer(i32),
+    Integer(i64),
     List(Box<Term>, Box<Term>), // Represents lists (head | tail)
     EmptyList,
 }
@@ -22,19 +24,65 @@ impl Term {
         Term::Variable(name.to_string())
     }
 
-    pub fn integer(value: i32) -> Self {
+    pub fn integer(value: i64) -> Self {
         Term::Integer(value)
     }
 
     pub fn list(head: Term, tail: Term) -> Self {
         Term::List(Box::new(head), Box::new(tail))
     }
+
+    pub fn from_tree_term(tree_term: TreeTerm) -> Self {
+        match *tree_term {  // Use the getter method
+            TermKind::Var(name) => Term::Variable(name.clone()),
+            TermKind::Atom(value) => Term::Constant(value.clone()),
+            TermKind::Integer(value) => Term::Integer(value),
+            TermKind::String(value) => Term::Constant(value.clone()), // Convert strings to constants
+            TermKind::Compound(name, args) => Term::Compound(
+                name.clone(),
+                args.iter().map(|arg| Term::from_tree_term(arg.clone())).collect(),
+            ),
+            TermKind::List(head, tail) => Term::List(
+                Box::new(Term::from_tree_term(head)), 
+                Box::new(Term::from_tree_term(tail))
+            ),
+            TermKind::EmptyList => Term::EmptyList,
+        }
+    }
+
+    pub fn from_tree_expr(tree_expr: TreeExpr) -> Self {
+        match *tree_expr {
+            ExprKind::Term(term) => Term::from_tree_term(term), // Base case: single term
+            ExprKind::Conjunct(lhs, rhs) => {
+                // Convert conjunctive expressions into nested Compound terms
+                Term::Compound("and".to_string(), vec![
+                    Term::from_tree_expr(lhs),
+                    Term::from_tree_expr(rhs)
+                ])
+            }
+        }
+    }
 }
+
 
 #[derive(Debug, Clone)]
 pub enum Clause {
     Fact(Term),
     Rule(Term, Term),
+}
+
+impl Clause {
+    pub fn from_tree_clause(tree_clause: TreeClause) -> Self {
+        match tree_clause {
+            TreeClause::Fact(term) => Clause::Fact(Term::from_tree_term(term)),
+            TreeClause::Rule(head, body) => {
+                Clause::Rule(
+                    Term::from_tree_term(head), 
+                    Term::from_tree_expr(body)  // Convert TreeExpr properly
+                )
+            }
+        }
+    }
 }
 
 #[cfg(test)]

@@ -1,55 +1,73 @@
-pub mod parser;
 mod database;
-mod solver;
+mod parser;
 mod terms;
 mod unification;
+mod solver;
 
 use database::Database;
+use parser::parser::{parse, parse_query};
 use solver::solve;
-use terms::Term;
-
-use crate::solver::solve;
-use crate::terms::Query;
-
-#[allow(unused_imports)]
-use parser::tree::{ TermKind, Clause, variable, atom, compound, conjunct, fact, rule };
-use parser::parser::{ parse, parse_query };
+use terms::{Clause, Term};
+use std::io;
 
 fn main() {
-    // Define a simple Prolog program with a fact.
+    // Sample Prolog-like program as input
     let input = "
-        parent(alice, bob).
+        a.
     ";
 
-    // Define a query that checks if Alice is Bob's parent.
-    let query_string = "
-        parent(alice, bob).
-    ";
+    let query_string = "a.";
 
-    // Parse the Prolog program into structured clauses.
-    let clauses = parse(input).expect("Failed to parse program.");
-    println!("Parsed clauses: {:?}", clauses);
+    // Parse input into clauses
+    let clauses = parse(input).expect("Failed to parse input.");
+    let db = Database::new(clauses.into_iter().map(Clause::from_tree_clause).collect());
 
-    // Create a database from parsed clauses.
-    let db = Database::new(clauses);
-
-    // Parse the query into a structured term.
+    // Parse query
     let query_term = parse_query(query_string).expect("Failed to parse query.");
-    println!("Parsed query: {:?}", query_term);
+    let query = Term::from_tree_term(query_term);
 
-    // Create a query object.
-    let query = Query::new(query_term);
+    println!("Database: {:?}", db);
+    println!("Query: {:?}", query);
 
-    // Try solving the query using `solve`.
-    if let Some(result) = solve(&query, &db) {
-        println!("Solution: {:?}", result);
+    // Solve query
+    if let Some(solution) = solve(&query, &db) {
+        println!("Solution: {:?}", solution);
     } else {
         println!("No solution found.");
     }
+    //Boolean response (TODO: Working progress)
+    if let Some(substitutions) = solve(&query, &db) {
+        if substitutions.is_empty() {
+            println!("true"); // Query matched exactly (no variables)
+        } else {
+            println!("true"); // A valid substitution was found
+        }
+    } else {
+        println!("false"); // No valid unification possible
+    }
 
-    // Try solving the query step-by-step.
-    match query.solve_from(&db, 0) {
-        Some(partial) => println!("Result: \x1b[32m{}\x1b[0m", partial.result),
-        None => println!("Result: \x1b[31mfalse\x1b[0m"),
+    // Interactive mode
+    loop {
+        println!("\nEnter a query (or type 'exit' to quit):");
+
+        let mut user_query = String::new();
+        io::stdin().read_line(&mut user_query).expect("Failed to read input");
+
+        let user_query = user_query.trim();
+        if user_query.eq_ignore_ascii_case("exit") {
+            break;
+        }
+
+        match parse_query(user_query) {
+            Ok(parsed_query) => {
+                let query = Term::from_tree_term(parsed_query);
+                if let Some(solution) = solve(&query, &db) {
+                    println!("Solution: {:?}", solution);
+                } else {
+                    println!("No solution found.");
+                }
+            }
+            Err(_) => println!("Invalid query format."),
+        }
     }
 }
