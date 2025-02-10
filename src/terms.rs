@@ -1,5 +1,5 @@
 use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, variable, atom, compound, conjunct, fact, rule, Term as TreeTerm, Expr as TreeExpr };
-
+use crate::unification::Substitution;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Term {
     Constant(String),
@@ -8,6 +8,7 @@ pub enum Term {
     Integer(i64),
     List(Box<Term>, Box<Term>), // Represents lists (head | tail)
     EmptyList,
+    Conjunct(Box<Term>, Box<Term>),
 }
 
 impl Term {
@@ -68,22 +69,61 @@ impl Term {
 #[derive(Debug, Clone)]
 pub enum Clause {
     Fact(Term),
-    Rule(Term, Term),
+    Rule(Term, Expression),
 }
 
 impl Clause {
     pub fn from_tree_clause(tree_clause: TreeClause) -> Self {
         match tree_clause {
             TreeClause::Fact(term) => Clause::Fact(Term::from_tree_term(term)),
-            TreeClause::Rule(head, body) => {
-                Clause::Rule(
-                    Term::from_tree_term(head), 
-                    Term::from_tree_expr(body)  // Convert TreeExpr properly
-                )
-            }
+            TreeClause::Rule(head, body) => Clause::Rule(
+                Term::from_tree_term(head),
+                Expression::from_tree_expr(body),
+            ),
         }
     }
+
+    fn convert_body(body: Vec<TreeTerm>) -> Term {
+        let mut terms = body.into_iter().map(Term::from_tree_term);
+        let first = terms.next().expect("Rule body cannot be empty");
+
+        terms.fold(first, |acc, next| {
+            Term::Compound("and".to_string(), vec![acc, next]) // Use Compound to represent conjunction
+        })
+    }
 }
+
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Term(Term),
+    Conjunct(Box<Expression>, Box<Expression>),  // Handles multiple conditions
+}
+
+impl Expression {
+    pub fn from_tree_expr(expr: Box<ExprKind>) -> Self {
+        match *expr {
+            ExprKind::Term(term) => Expression::Term(Term::from_tree_term(term)),
+            ExprKind::Conjunct(left, right) => Expression::Conjunct(
+                Box::new(Expression::from_tree_expr(left)),
+                Box::new(Expression::from_tree_expr(right)),
+            ),
+        }
+    }
+    pub fn apply(&self, subs: &Substitution) -> Self {
+        match self {
+            Expression::Term(term) => Expression::Term(subs.apply(term)),
+            Expression::Conjunct(left, right) => Expression::Conjunct(
+                Box::new(left.apply(subs)),
+                Box::new(right.apply(subs)),
+            ),
+        }
+    }
+    pub fn from_term(term: Term) -> Self {
+        Expression::Term(term)  // Wraps a single term into an expression
+    }
+}
+
+
 
 #[cfg(test)]
 mod tests {

@@ -7,7 +7,7 @@ mod solver;
 use database::Database;
 use parser::parser::{parse, parse_query};
 use solver::solve;
-use terms::{Clause, Term};
+use terms::{Clause, Term, Expression};
 use std::io;
 
 fn main() {
@@ -16,7 +16,7 @@ fn main() {
         a.
     ";
 
-    let query_string = "b.";
+    let query_string = "a.";
 
     // Parse input into clauses
     let clauses = parse(input).expect("Failed to parse input.");
@@ -29,14 +29,16 @@ fn main() {
     println!("Database: {:?}", db);
     println!("Query: {:?}", query);
 
+    // Convert query from Term to Expression
+    let query_expr = Expression::from_term(query);  
     // Solve query
-    if let Some(solution) = solve(&query, &db) {
+    if let Some(solution) = solve(&query_expr, &db) {
         println!("Solution: {:?}", solution);
     } else {
         println!("No solution found.");
     }
     //Boolean response (TODO: Working progress)
-    if let Some(substitutions) = solve(&query, &db) {
+    if let Some(substitutions) = solve(&query_expr, &db) {
         if substitutions.is_empty() {
             println!("true"); // Query matched exactly (no variables)
         } else {
@@ -61,13 +63,13 @@ fn main() {
         match parse_query(user_query) {
             Ok(parsed_query) => {
                 let query = Term::from_tree_term(parsed_query);
-                if let Some(solution) = solve(&query, &db) {
+                if let Some(solution) = solve(&query_expr, &db) {
                     println!("Solution: {:?}", solution);
                 } else {
                     println!("No solution found.");
                 }
                 //Boolean response (TODO: Working progress)
-                if let Some(substitutions) = solve(&query, &db) {
+                if let Some(substitutions) = solve(&query_expr, &db) {
                     if substitutions.is_empty() {
                         println!("true"); // Query matched exactly (no variables)
                     } else {
