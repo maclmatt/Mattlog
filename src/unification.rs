@@ -18,15 +18,27 @@ impl Substitution {
                     term.clone()
                 }
             }
+            Term::Constant(_) | Term::Integer(_) | Term::EmptyList => term.clone(),
+    
             Term::Compound(name, args) => {
                 Term::Compound(name.clone(), args.iter().map(|t| self.apply(t)).collect())
             }
+            
             Term::List(head, tail) => {
-                Term::List(Box::new(self.apply(head)), Box::new(self.apply(tail)))
+                let new_head = Box::new(self.apply(head));
+                let new_tail = Box::new(self.apply(tail));
+                Term::List(new_head, new_tail)
             }
-            _ => term.clone(), // Constant, Integer, EmptyList remain unchanged
+    
+            Term::Conjunct(left, right) => {
+                let new_left = Box::new(self.apply(left));
+                let new_right = Box::new(self.apply(right));
+                Term::Conjunct(new_left, new_right)
+            }
         }
     }
+    
+    
 
     pub fn extend(&mut self, var: String, term: Term) {
         self.0.insert(var, term);

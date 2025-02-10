@@ -127,6 +127,7 @@ impl Query {
                     println!("Unifying fact {} with {}", self.goal, t);
                     if let Some((n, bindings)) = unify_term(&self.goal, &t) {
                         println!("Returning {:?} {:?}", n, bindings);
+                        println!("Bindings after unification: {:?}", bindings);
                         return Some(Partial::new(bindings.substitute(n), bindings, i));
                     }
                 },
@@ -241,7 +242,15 @@ pub fn unify_term(term1: &Term, term2: &Term) -> Option<(Term, Bindings)> {
         (TermKind::List(h1, t1), TermKind::List(h2, t2)) => {
             let (head, head_bindings) = unify_term(h1, h2)?;
             let (tail, tail_bindings) = unify_term(t1, t2)?;
-            Some((Box::new(TermKind::List(head, tail)), head_bindings.merge(&tail_bindings)?))
+            
+            let merged_bindings = head_bindings.merge(&tail_bindings)?;
+            Some((Box::new(TermKind::List(head, tail)), merged_bindings))
+        },
+        
+
+        (TermKind::Var(n), TermKind::List(_, _)) | (TermKind::List(_, _), TermKind::Var(n)) => {
+            println!("Binding variable {} to list {:?}", n, term2);
+            Some((term2.clone(), Bindings::with(n, term2.clone())))
         },
 
         (TermKind::Var(n), TermKind::Var(m)) if n == m => {
@@ -256,6 +265,7 @@ pub fn unify_term(term1: &Term, term2: &Term) -> Option<(Term, Bindings)> {
         _ => None
     }
 }
+
 
 pub fn simplify_term(db: &DatabaseParser, term: &Term, bindings: &Bindings, at_rule: usize) -> Option<Partial> {
     if let Some(func) = lookup_builtin(term) {

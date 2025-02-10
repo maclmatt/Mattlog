@@ -13,10 +13,10 @@ use std::io;
 fn main() {
     // Sample Prolog-like program as input
     let input = "
-        a.
+        head([H|Y], H).
     ";
 
-    let query_string = "a.";
+    let query_string = "head([1,2,3], X).";
 
     // Parse input into clauses
     let clauses = parse(input).expect("Failed to parse input.");
