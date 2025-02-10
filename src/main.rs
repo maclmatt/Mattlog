@@ -13,10 +13,10 @@ use std::io;
 fn main() {
     // Sample Prolog-like program as input
     let input = "
-        head([H|Y], H).
+        equal(X, X).
     ";
 
-    let query_string = "head([1,2,3], X).";
+    let query_string = "equal(a, b).";
 
     // Parse input into clauses
     let clauses = parse(input).expect("Failed to parse input.");
@@ -46,6 +46,21 @@ fn main() {
         }
     } else {
         println!("false"); // No valid unification possible
+    }
+
+    //print substitution
+    if let Some(solution) = solve(&query_expr, &db) {
+        if let Some(x_term) = solution.get("X") {  // Use the new `get` method
+            let resolved_x = solution.resolve(x_term); // Resolve to its final value
+            match resolved_x {
+                Term::Integer(n) => println!("X = {}", n),   // Print just the number
+                Term::Constant(c) => println!("X = {}", c), // Print constants directly
+                Term::List(_, _) | Term::Compound(_, _) => println!("X = {:?}", resolved_x), // Print lists/compounds fully
+                _ => println!("X = {:?}", resolved_x), // Fallback case
+            }
+        }
+    } else {
+        println!("No solution found.");
     }
 
     // Interactive mode
@@ -81,5 +96,7 @@ fn main() {
             }
             Err(_) => println!("Invalid query format."),
         }
+        println!("Database: {:?}", db);
     }
+    println!("Database: {:?}", db);
 }

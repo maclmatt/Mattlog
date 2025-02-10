@@ -44,26 +44,51 @@ impl Substitution {
         self.0.insert(var, term);
     }
 
-    pub fn allow_merge(&mut self, other: &Substitution) {
+    pub fn allow_merge(&mut self, other: &Substitution) -> bool {
+        let initial_size = self.0.len();
         self.0.extend(other.0.clone());
+        self.0.len() > initial_size // Return true if new substitutions were added
     }
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    pub fn get(&self, var: &str) -> Option<&Term> {
+        self.0.get(var) // Access the internal map safely
+    }
+
+    pub fn resolve(&self, term: &Term) -> Term {
+        match term {
+            Term::Variable(var) => {
+                if let Some(substituted) = self.get(var) {  // Use get() instead of accessing 0 directly
+                    self.resolve(substituted) // Recursively resolve substitutions
+                } else {
+                    term.clone() // If not found, return as is
+                }
+            }
+            _ => term.clone(), // If it's not a variable, return as is
+        }
+    }
+
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
+    println!("Attempting to unify {:?} and {:?}", term1, term2);
     match (term1, term2) {
         (Term::Variable(x), t) | (t, Term::Variable(x)) => {
-            // Variable unification with occurs check
             if t != term1 && occurs_check(x, t) {
-                false
-            } else {
-                subst.extend(x.clone(), t.clone());
-                true
+                return false;
             }
+            
+            //NEW CHECK: If `x` is already bound, ensure it doesn't overwrite another constant
+            if let Some(existing) = subst.get(x) {
+                if existing != t {
+                    return false;
+                }
+            }
+            subst.extend(x.clone(), t.clone());
+            return true;
         }
         (Term::Constant(a), Term::Constant(b)) => a == b, // Constant unification
         (Term::Integer(a), Term::Integer(b)) => a == b, // Integer unification
