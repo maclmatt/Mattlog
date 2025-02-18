@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use crate::terms::Term;
 
@@ -45,6 +46,20 @@ impl Substitution {
     }
 
     pub fn allow_merge(&mut self, other: &Substitution) -> bool {
+        // Collect all conflicting variables first (to avoid mutable borrowing errors)
+        let conflicts: Vec<_> = other.0.iter()
+            .filter(|(var, val)| self.0.get(var as &String).map_or(false, |existing| *existing != **val))
+            .collect();
+        
+        // If any conflicts exist, reject merge
+        if !conflicts.is_empty() {
+            for (var, val) in &conflicts {
+                println!("Merge failed: {} = {:?} conflicts with {:?}", var, self.0.get(var as &String), val);
+            }
+            return false;
+        }
+
+        // If no conflicts, safely extend the substitution
         let initial_size = self.0.len();
         self.0.extend(other.0.clone());
         self.0.len() > initial_size // Return true if new substitutions were added
@@ -56,6 +71,10 @@ impl Substitution {
 
     pub fn get(&self, var: &str) -> Option<&Term> {
         self.0.get(var) // Access the internal map safely
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Term)> {
+        self.0.iter()
     }
 
     pub fn resolve(&self, term: &Term) -> Term {
@@ -74,6 +93,10 @@ impl Substitution {
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
+    if term1 == term2 {
+        return true; //Stop immediately if the terms are already equal
+    }
+
     //println!("Attempting to unify {:?} and {:?}", term1, term2);
     match (term1, term2) {
         (Term::Variable(x), t) | (t, Term::Variable(x)) => {
