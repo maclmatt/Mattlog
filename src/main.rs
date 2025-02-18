@@ -55,7 +55,6 @@ fn main() {
                             println!("true"); // Query matched exactly (no variables)
                         } else {
                             println!("Substitutions: {:?}", solution);
-                            println!("true");
                         }
 
                         // If there's a substitution for "X", print it
