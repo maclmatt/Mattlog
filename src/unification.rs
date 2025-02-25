@@ -37,9 +37,7 @@ impl Substitution {
                 Term::Conjunct(new_left, new_right)
             }
         }
-    }
-    
-    
+    }  
 
     pub fn extend(&mut self, var: String, term: Term) {
         self.0.insert(var, term);

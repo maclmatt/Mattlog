@@ -6,6 +6,27 @@ use std::collections::HashMap;
 pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
     let mut subs = Substitution::new();
 
+    if let Expression::Term(Term::Compound(name, args)) = query {
+        if name == "is" && args.len() == 2 {
+            let left = &args[0];  // Should be a variable
+            let right = &args[1]; // Should be an evaluable expression
+            
+            println!("Evaluating: {:?} is {:?}", left, right);
+
+            // Ensure left is a variable
+            if let Term::Variable(var) = left {
+                // Ensure right is evaluable
+                if let Some(value) = evaluate_expression(right) {
+                    println!("Computed: {} is {}", var, value);
+                    let mut result = Substitution::new();
+                    result.extend(var.clone(), Term::Integer(value)); // Bind X to 2
+                    return Some(result);
+                }
+            }
+            return None; // Fail if invalid `is/2`
+        }
+    }
+
     match query {
         Expression::Term(term) => {
             for clause in &db.clauses {
@@ -56,3 +77,20 @@ pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
     None
 }
 
+fn evaluate_expression(expr: &Term) -> Option<i64> {
+    match expr {
+        Term::Integer(n) => Some(*n),
+        Term::Compound(op, args) if args.len() == 2 => {
+            let left = evaluate_expression(&args[0])?;
+            let right = evaluate_expression(&args[1])?;
+            match op.as_str() {
+                "+" => Some(left + right),
+                "-" => Some(left - right),
+                "*" => Some(left * right),
+                "/" => if right != 0 { Some(left / right) } else { None },
+                _ => None, // Unsupported operator
+            }
+        }
+        _ => None, // Not an arithmetic expression
+    }
+}
