@@ -4,12 +4,10 @@ use crate::unification::{Substitution, unify};
 use std::collections::HashMap;
 
 pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
-    let term = if let Expression::Term(term) = query {
-        preprocess(term.clone())
-    } else {
-        return None;  // Unsupported query type (e.g., Conjunct)
+    let term = match query {
+        Expression::Term(term) => term,
+        _ => return None,
     };
-    println!("Term: {:?}", term);
     solve_term(&term, db)
 }
 
@@ -120,27 +118,3 @@ fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
 
 // Operators we want to handle
 const RELATIONAL_OPERATORS: [&str; 6] = ["<", ">", "=<", ">=", "=", "\\="];
-const ARITHMETIC_OPERATORS: [&str; 4] = ["+", "-", "*", "/"];
-
-// Preprocessing - handles nested arithmetic/relations
-pub fn preprocess(term: Term) -> Term {
-    if let Term::Compound(op, args) = &term {
-        if RELATIONAL_OPERATORS.contains(&op.as_str()) && args.len() == 2 {
-            let left = preprocess(args[0].clone());
-            let right = preprocess(args[1].clone());
-            return Term::Compound(op.clone(), vec![left, right]);
-        }
-    }
-    preprocess_arithmetic(term)
-}
-
-pub fn preprocess_arithmetic(term: Term) -> Term {
-    if let Term::Compound(op, args) = &term {
-        if ARITHMETIC_OPERATORS.contains(&op.as_str()) && args.len() == 2 {
-            let left = preprocess_arithmetic(args[0].clone());
-            let right = preprocess_arithmetic(args[1].clone());
-            return Term::Compound(op.clone(), vec![left, right]);
-        }
-    }
-    term
-}
