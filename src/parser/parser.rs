@@ -212,34 +212,82 @@ fn parse_comma_separated(input: &mut Peekable<Lexer>) -> Result<Vec<Term>, Parse
     Ok(list)
 }
 
-const OPERATORS: [&str; 12] = [ ",", "=", "\\=", ">", ">=", "<", "<=", "+", "-", "is", "*", "/" ];
+const OPERATORS: [(&str, u8); 12] = [
+    (",", 1),
+    ("=", 2), ("\\=", 2),
+    (">", 3), (">=", 3), ("<", 3), ("=<", 3),
+    ("+", 4), ("-", 4),
+    ("is", 5),
+    ("*", 6), ("/", 6),
+];
+
+fn operator_precedence(op: &str) -> Option<u8> {
+    OPERATORS.iter().find_map(|(name, prec)| {
+        if *name == op { Some(*prec) } else { None }
+    })
+}
+
+fn parse_term_with_prec(input: &mut Peekable<Lexer>, min_prec: u8) -> Result<Term, ParseError> {
+    let mut lhs = match expect_next(input)? {
+        Token::String(string) => Ok(Box::new(TermKind::String(string))),
+        Token::Word(name) => match input.peek() {
+            Some(Token::OpenBracket) => parse_compound(input, name),
+            _ => parse_atom_or_variable(name),
+        },
+        Token::OpenSquare => parse_list(input),
+        token => Err(ParseError::UnexpectedToken(token)),
+    }?;
+
+    while let Some(next_token) = input.peek().cloned() {
+        let op = match next_token {
+            Token::Word(name) => {
+                if let Some(prec) = operator_precedence(&name) {
+                    if prec < min_prec {
+                        break;
+                    }
+                    name
+                } else {
+                    break;
+                }
+            }
+            _ => break,
+        };
+
+        let op_prec = operator_precedence(&op).unwrap();
+        input.next(); // consume operator
+
+        let mut rhs = parse_term_with_prec(input, op_prec + 1)?;
+
+        while let Some(next_token) = input.peek().cloned() {
+            let next_op = match next_token {
+                Token::Word(name) => name,
+                _ => break,
+            };
+
+            let next_prec = match operator_precedence(&next_op) {
+                Some(prec) => prec,
+                None => break,
+            };
+
+            if next_prec <= op_prec {
+                break;
+            }
+
+            input.next(); // consume the next operator
+            let next_rhs = parse_term_with_prec(input, next_prec + 1)?;
+            rhs = Box::new(TermKind::Compound(next_op, vec![rhs, next_rhs]));
+        }
+
+        lhs = Box::new(TermKind::Compound(op, vec![lhs, rhs]));
+    }
+
+    Ok(lhs)
+}
 
 fn parse_term(input: &mut Peekable<Lexer>) -> Result<Term, ParseError> {
-    let term = match expect_next(input)? {
-        Token::String(string) => Ok(Box::new(TermKind::String(string))),
-        Token::Word(name) => {
-            match input.peek() {
-                Some(Token::OpenBracket) =>
-                    parse_compound(input, name),
-                _ =>
-                    parse_atom_or_variable(name),
-            }
-        },
-        Token::OpenSquare => {
-            parse_list(input)
-        },
-        token => Err(ParseError::UnexpectedToken(token)),
-    };
-
-    match input.peek() {
-        Some(Token::Word(name)) if OPERATORS.iter().any(|s| *s == name) => {
-            let name = name.to_string();
-            input.next();
-            Ok(Box::new(TermKind::Compound(name, vec!(term?, parse_term(input)?))))
-        },
-        _ => term,
-    }
+    parse_term_with_prec(input, 0)
 }
+
 
 fn parse_expression(input: &mut Peekable<Lexer>) -> Result<Expr, ParseError> {
     let term = Box::new(ExprKind::Term(parse_term(input)?));
