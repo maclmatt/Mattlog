@@ -212,7 +212,7 @@ fn parse_comma_separated(input: &mut Peekable<Lexer>) -> Result<Vec<Term>, Parse
     Ok(list)
 }
 
-const OPERATORS: [&str; 10] = [ ",", "=", "\\=", ">", ">=", "<", "<=", "+", "-", "is" ];
+const OPERATORS: [&str; 12] = [ ",", "=", "\\=", ">", ">=", "<", "<=", "+", "-", "is", "*", "/" ];
 
 fn parse_term(input: &mut Peekable<Lexer>) -> Result<Term, ParseError> {
     let term = match expect_next(input)? {
