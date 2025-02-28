@@ -6,6 +6,13 @@ use std::collections::HashMap;
 pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
     let mut subs = Substitution::new();
 
+    let term = if let Expression::Term(term) = query {
+        preprocess(term.clone())
+    } else {
+        return None;  // Unsupported query type (e.g., not a Term expression)
+    };
+    
+
     if let Expression::Term(Term::Compound(name, args)) = query {
         if name == "is" && args.len() == 2 {
             let left = &args[0];  // Should be a variable
@@ -110,6 +117,7 @@ fn evaluate_arithmetic(expr: &Term) -> Option<i64> {
 fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
     let left_value = evaluate_arithmetic(left)?;
     let right_value = evaluate_arithmetic(right)?;
+    println!("Left and Right {} {}", left_value, right_value);
 
     match op {
         "<" => Some(left_value < right_value),
@@ -120,4 +128,29 @@ fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
         "\\=" => Some(left_value != right_value),
         _ => None, // Unsupported operator
     }
+}
+
+const RELATIONAL_OPERATORS: [&str; 6] = ["<", ">", "=<", ">=", "=", "\\="];
+const ARITHMETIC_OPERATORS: [&str; 4] = ["+", "-", "*", "/"];
+
+pub fn preprocess(term: Term) -> Term {
+    if let Term::Compound(op, args) = &term {
+        if RELATIONAL_OPERATORS.contains(&op.as_str()) && args.len() == 2 {
+            let left = preprocess(args[0].clone());
+            let right = preprocess(args[1].clone());
+            return Term::Compound(op.clone(), vec![left, right]);
+        }
+    }
+    preprocess_arithmetic(term)
+}
+
+pub fn preprocess_arithmetic(term: Term) -> Term {
+    if let Term::Compound(op, args) = &term {
+        if ARITHMETIC_OPERATORS.contains(&op.as_str()) && args.len() == 2 {
+            let left = preprocess_arithmetic(args[0].clone());
+            let right = preprocess_arithmetic(args[1].clone());
+            return Term::Compound(op.clone(), vec![left, right]);
+        }
+    }
+    term
 }

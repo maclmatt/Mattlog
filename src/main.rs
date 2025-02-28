@@ -47,6 +47,8 @@ fn main() {
             Ok(parsed_query) => {
                 let query = Term::from_tree_term(parsed_query);
                 let query_expr = Expression::from_term(query);
+                println!("Parsed query: {:?}", query_expr);
+
 
                 // Solve the query
                 match solve(&query_expr, &db) {
