@@ -16,7 +16,7 @@ pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
             // Ensure left is a variable
             if let Term::Variable(var) = left {
                 // Ensure right is evaluable
-                if let Some(value) = evaluate_expression(right) {
+                if let Some(value) = evaluate_arithmetic(right) {
                     println!("Computed: {} is {}", var, value);
                     let mut result = Substitution::new();
                     result.extend(var.clone(), Term::Integer(value)); // Bind X to 2
@@ -25,6 +25,18 @@ pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
             }
             return None; // Fail if invalid `is/2`
         }
+
+        if ["<", ">", "=<", ">=", "=", "\\="].contains(&name.as_str()) && args.len() == 2 {
+            if let Some(result) = evaluate_relation(name, &args[0], &args[1]) {
+                if result {
+                    return Some(subs); // Success, return empty substitution (nothing to bind)
+                } else {
+                    return None; // Failure (relation is false)
+                }
+            }
+            return None; // Invalid relation expression
+        }
+
     }
 
     match query {
@@ -77,12 +89,12 @@ pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
     None
 }
 
-fn evaluate_expression(expr: &Term) -> Option<i64> {
+fn evaluate_arithmetic(expr: &Term) -> Option<i64> {
     match expr {
         Term::Integer(n) => Some(*n),
         Term::Compound(op, args) if args.len() == 2 => {
-            let left = evaluate_expression(&args[0])?;
-            let right = evaluate_expression(&args[1])?;
+            let left = evaluate_arithmetic(&args[0])?;
+            let right = evaluate_arithmetic(&args[1])?;
             match op.as_str() {
                 "+" => Some(left + right),
                 "-" => Some(left - right),
@@ -92,5 +104,20 @@ fn evaluate_expression(expr: &Term) -> Option<i64> {
             }
         }
         _ => None, // Not an arithmetic expression
+    }
+}
+
+fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
+    let left_value = evaluate_arithmetic(left)?;
+    let right_value = evaluate_arithmetic(right)?;
+
+    match op {
+        "<" => Some(left_value < right_value),
+        ">" => Some(left_value > right_value),
+        "=<" => Some(left_value <= right_value),
+        ">=" => Some(left_value >= right_value),
+        "=" => Some(left_value == right_value),
+        "\\=" => Some(left_value != right_value),
+        _ => None, // Unsupported operator
     }
 }

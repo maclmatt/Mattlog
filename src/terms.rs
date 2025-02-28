@@ -121,6 +121,14 @@ impl Expression {
     pub fn from_term(term: Term) -> Self {
         Expression::Term(term)  // Wraps a single term into an expression
     }
+
+    pub fn unwrap_term(&self) -> Option<&Term> {
+        if let Expression::Term(term) = self {
+            Some(term)
+        } else {
+            None
+        }
+    }
 }
 
 
