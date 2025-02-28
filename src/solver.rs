@@ -1,6 +1,7 @@
 use crate::database::Database;
 use crate::terms::{Clause, Term, Expression};
 use crate::unification::{Substitution, unify};
+use crate::expr_parser::preprocess_expression;
 use std::collections::HashMap;
 
 pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
