@@ -33,6 +33,10 @@ impl Term {
         Term::List(Box::new(head), Box::new(tail))
     }
 
+    pub fn is_list(&self) -> bool {
+        matches!(self, Term::List(_, _) | Term::EmptyList)
+    }
+
     pub fn from_tree_term(tree_term: TreeTerm) -> Self {
         match *tree_term {  // Use the getter method
             TermKind::Var(name) => Term::Variable(name.clone()),

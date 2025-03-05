@@ -43,6 +43,23 @@ impl Substitution {
         self.0.insert(var, term);
     }
 
+    
+    pub fn merge(&self, other: &Substitution) -> Option<Substitution> {
+        let mut merged = self.clone();
+    
+        if !merged.allow_merge(other) {
+            return None;  // Conflict detected
+        }
+    
+        for (var, term) in &other.0 {
+            merged.extend(var.clone(), term.clone());
+        }
+    
+        Some(merged)
+    }
+
+    
+
     pub fn allow_merge(&mut self, other: &Substitution) -> bool {
         // Collect all conflicting variables first (to avoid mutable borrowing errors)
         let conflicts: Vec<_> = other.0.iter()

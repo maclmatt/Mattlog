@@ -36,20 +36,20 @@ fn format_term(term: &Term, subs: &Substitution) -> String {
         }
         Term::List(head, tail) => {
             let mut items = vec![format_term(head, subs)];
-            let mut current = tail.as_ref();
 
-            while let Term::List(next_head, next_tail) = current {
-                items.push(format_term(next_head, subs));
-                current = next_tail.as_ref();
+            let mut current_tail = tail.as_ref();
+            while let Term::List(head, next_tail) = current_tail {
+                items.push(format_term(head, subs));
+                current_tail = next_tail.as_ref();
             }
 
-            if let Term::EmptyList = current {
-                format!("[{}]", items.join(", "))
-            } else {
-                // This covers the case of improper lists (e.g., [a|b])
-                let tail_str = format_term(current, subs);
-                format!("[{} | {}]", items.join(", "), tail_str)
+            if !matches!(current_tail, Term::EmptyList) {
+                // Handle improper list (ending with something other than [])
+                items.push("|".to_string());
+                items.push(format_term(current_tail, subs));
             }
+
+            format!("[{}]", items.join(", "))
         }
         Term::EmptyList => "[]".to_string(),
         Term::Conjunct(left, right) => {
@@ -57,4 +57,3 @@ fn format_term(term: &Term, subs: &Substitution) -> String {
         }
     }
 }
-

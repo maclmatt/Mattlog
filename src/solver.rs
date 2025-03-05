@@ -4,12 +4,22 @@ use crate::unification::{Substitution, unify};
 use std::collections::HashMap;
 
 pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
-    let term = match query {
-        Expression::Term(term) => term,
-        _ => return None,
-    };
-    solve_term(&term, db)
+    match query {
+        Expression::Term(term) => solve_term(term, db),
+        Expression::Conjunct(lhs, rhs) => {
+            if let Some(lhs_subs) = solve(lhs, db) {
+                let applied_rhs = rhs.apply(&lhs_subs);
+                if let Some(rhs_subs) = solve(&applied_rhs, db) {
+                    if let Some(merged_subs) = lhs_subs.merge(&rhs_subs) {
+                        return Some(merged_subs);
+                    }
+                }
+            }
+            None
+        }
+    }
 }
+
 
 fn solve_term(term: &Term, db: &Database) -> Option<Substitution> {
     let mut subs = Substitution::new();
