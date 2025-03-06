@@ -20,12 +20,11 @@ pub fn solve(query: &Expression, db: &Database) -> Option<Substitution> {
     }
 }
 
-
 fn solve_term(term: &Term, db: &Database) -> Option<Substitution> {
     let mut subs = Substitution::new();
 
     if let Term::Compound(name, args) = term {
-        // Handle arithmetic "is" separately
+        // 1. Handle arithmetic "is"
         if name == "is" && args.len() == 2 {
             let left = &args[0];  // Should be a variable
             let right = &args[1]; // Should be an evaluable expression
@@ -43,40 +42,47 @@ fn solve_term(term: &Term, db: &Database) -> Option<Substitution> {
             return None;
         }
 
-        // Handle relational operators (e.g., <, >, etc.)
+        // 2. Handle relational operators (<, >, =<, etc.)
         if RELATIONAL_OPERATORS.contains(&name.as_str()) && args.len() == 2 {
             if let Some(result) = evaluate_relation(name, &args[0], &args[1]) {
                 if result {
-                    return Some(subs); // Success, no new substitution
+                    return Some(subs); // Success with no new substitution
                 } else {
-                    return None; // Relation failed
+                    return None; // Relation check failed
                 }
             }
             return None; // Invalid relation expression
         }
 
-        // Try to match against facts/rules in the database
+        // 3. Try to match against facts/rules in the database
         for clause in &db.clauses {
             match clause {
                 Clause::Fact(fact) => {
+                    // Unify directly with fact
                     if unify(term, fact, &mut subs) {
                         return Some(subs);
                     }
                 }
                 Clause::Rule(head, body) => {
                     let mut local_subs = subs.clone();
+
+                    // First unify the query with the rule head
                     if unify(term, head, &mut local_subs) {
+                        println!("Matched rule head, applying body: {:?}", body);
+
                         let applied_body = body.apply(&local_subs);
 
-                        if let Some(new_subs) = solve(&applied_body, db) {
-                            if new_subs.is_empty() {
+                        // Recursively solve the body (may contain multiple terms if conjunct)
+                        if let Some(body_subs) = solve(&applied_body, db) {
+                            if body_subs.is_empty() {
+                                // No new subs needed, return local substitutions
                                 return Some(local_subs);
                             }
-                            if local_subs.allow_merge(&new_subs) {
-                                for (var, term) in new_subs.iter() {
-                                    local_subs.extend(var.clone(), term.clone());
-                                }
-                                return Some(local_subs);
+
+                            // Merge local_subs and body_subs (more correct than manual extend)
+                            if local_subs.allow_merge(&body_subs) {
+                                let merged = local_subs.merged_with(&body_subs);
+                                return Some(merged);
                             } else {
                                 println!("Conflict detected when merging substitutions");
                             }
@@ -89,6 +95,7 @@ fn solve_term(term: &Term, db: &Database) -> Option<Substitution> {
 
     None
 }
+
 
 // Arithmetic evaluation (for 'is')
 fn evaluate_arithmetic(expr: &Term) -> Option<i64> {

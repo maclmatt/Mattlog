@@ -58,7 +58,13 @@ impl Substitution {
         Some(merged)
     }
 
-    
+    pub fn merged_with(&self, other: &Substitution) -> Substitution {
+        let mut new_subs = self.clone();
+        for (var, term) in &other.0 {
+            new_subs.extend(var.clone(), term.clone());
+        }
+        new_subs
+    } 
 
     pub fn allow_merge(&mut self, other: &Substitution) -> bool {
         // Collect all conflicting variables first (to avoid mutable borrowing errors)

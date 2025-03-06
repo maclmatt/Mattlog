@@ -67,6 +67,26 @@ impl Term {
             }
         }
     }
+
+    pub fn apply(&self, subs: &Substitution) -> Term {
+        match self {
+            Term::Variable(var) => {
+                if let Some(replacement) = subs.get(var) {
+                    replacement.clone()
+                } else {
+                    self.clone()
+                }
+            }
+            Term::Compound(name, args) => {
+                Term::Compound(name.clone(), args.iter().map(|a| a.apply(subs)).collect())
+            }
+            Term::List(head, tail) => {
+                Term::List(Box::new(head.apply(subs)), Box::new(tail.apply(subs)))
+            }
+            _ => self.clone()
+        }
+    }
+    
 }
 
 
