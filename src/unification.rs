@@ -43,7 +43,6 @@ impl Substitution {
         self.0.insert(var, term);
     }
 
-    
     pub fn merge(&self, other: &Substitution) -> Option<Substitution> {
         let mut merged = self.clone();
     
@@ -108,6 +107,19 @@ impl Substitution {
                 }
             }
             _ => term.clone(), // If it's not a variable, return as is
+        }
+    }
+
+    pub fn remove(&mut self, var: &str) {
+        if self.0.contains_key(var) {
+            self.0.remove(var);
+            println!("Removed binding for {}", var);
+        }
+    }
+
+    pub fn remove_multiple(&mut self, vars: Vec<String>) {
+        for var in vars {
+            self.remove(&var);
         }
     }
 

@@ -1,6 +1,7 @@
 use crate::bytecode::Bytecode;
 use crate::environment::Environment;
-use crate::backtracking::BacktrackingStack;
+use crate::backtracking::{BacktrackingStack, ChoicePoint};
+use crate::terms::Term;
 
 pub struct Interpreter {
     env: Environment,
@@ -20,6 +21,13 @@ impl Interpreter {
             match instruction {
                 Bytecode::Call(predicate) => {
                     println!("Calling {}", predicate);
+                    // Push a choice point if alternatives exist.
+                    if let Some(alternatives) = self.get_alternatives(&predicate) {
+                        self.stack.push(ChoicePoint {
+                            env: self.env.clone(),
+                            alternatives,
+                        });
+                    }
                     // Handle predicate lookup and execution.
                 }
                 Bytecode::Unify(term) => {
@@ -35,9 +43,13 @@ impl Interpreter {
                     // Cleanup environment.
                 }
                 Bytecode::Backtrack => {
-                    println!("Backtracking");
+                    println!("Backtracking...");
                     if let Some(choice) = self.stack.pop() {
                         self.env = choice.env;
+                        println!("Restoring environment and retrying alternatives...");
+                        for alternative in choice.alternatives {
+                            self.execute(vec![Bytecode::Call(alternative.to_string())]);
+                        }
                     }
                 }
                 Bytecode::Proceed => {
@@ -46,6 +58,11 @@ impl Interpreter {
                 }
             }
         }
+    }
+
+    fn get_alternatives(&self, predicate: &str) -> Option<Vec<Term>> {
+        // Retrieve alternative rules for a predicate.
+        None
     }
 }
 

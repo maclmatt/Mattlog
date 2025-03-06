@@ -1,5 +1,7 @@
 use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, variable, atom, compound, conjunct, fact, rule, Term as TreeTerm, Expr as TreeExpr };
 use crate::unification::Substitution;
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Term {
     Constant(String),
@@ -87,6 +89,23 @@ impl Term {
         }
     }
     
+}
+
+impl fmt::Display for Term {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Term::Variable(name) => write!(f, "{}", name),
+            Term::Integer(n) => write!(f, "{}", n),
+            Term::Constant(name) => write!(f, "{}", name),
+            Term::Compound(name, args) => {
+                let args_str: Vec<String> = args.iter().map(|arg| format!("{}", arg)).collect();
+                write!(f, "{}({})", name, args_str.join(", "))
+            }
+            Term::List(head, tail) => write!(f, "[{} | {}]", head, tail),
+            Term::EmptyList => write!(f, "[]"),
+            Term::Conjunct(left, right) => write!(f, "{} , {}", left, right),
+        }
+    }
 }
 
 

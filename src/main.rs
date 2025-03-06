@@ -4,6 +4,8 @@ mod terms;
 mod unification;
 mod solver;
 mod result;
+mod backtracking;
+mod environment;
 
 use database::Database;
 use parser::parser::{parse, parse_query};
@@ -11,6 +13,7 @@ use solver::solve;
 use terms::{Clause, Term, Expression};
 use eframe::{egui, App, Frame};
 use std::fs;
+use backtracking::BacktrackingStack;
 
 struct PrologApp {
     rules_text: String,
@@ -83,25 +86,42 @@ impl App for PrologApp {
                                 Ok(parsed_query) => {
                                     let query = Term::from_tree_term(parsed_query);
                                     let query_expr = Expression::from_term(query);
-                            
-                                    // Call the solver
-                                    let solution = solver::solve(&query_expr, db);
-                            
-                                    // Format the result using results.rs
-                                    let result = result::get_result(&self.query_text, solution);
-                            
-                                    // Add to history
+                    
+                                    // ✅ Create a BacktrackingStack for the solver
+                                    let mut stack = BacktrackingStack::new();
+                    
+                                    // ✅ Call the solver with backtracking support
+                                    let solution = solver::solve(&query_expr, db, &mut stack);
+                    
+                                    // ✅ If no solution is found, backtrack and try alternatives
+                                    let final_solution = match solution {
+                                        Some(sol) => Some(sol),
+                                        None => {
+                                            while let Some(choice) = stack.pop() {
+                                                let retry_solution = solver::solve(&Expression::Term(choice.alternatives[0].clone()), db, &mut stack);
+                                                if retry_solution.is_some() {
+                                                    break;
+                                                }
+                                            }
+                                            None
+                                        }
+                                    };
+                    
+                                    // ✅ Format the result
+                                    let result = result::get_result(&self.query_text, final_solution);
+                    
+                                    // ✅ Add to history
                                     self.query_history.push(result);
                                 }
                                 Err(_) => {
                                     self.query_history.push(format!("{} => Invalid query format", self.query_text));
                                 }
                             }
-                            
                         } else {
                             self.query_history.push("No rules loaded. Please parse rules first.".to_string());
                         }
                     }
+                    
 
                     ui.separator();
 
