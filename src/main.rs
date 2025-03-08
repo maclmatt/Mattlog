@@ -87,18 +87,17 @@ impl App for PrologApp {
                                     let query = Term::from_tree_term(parsed_query);
                                     let query_expr = Expression::from_term(query);
                     
-                                    // ✅ Create a BacktrackingStack for the solver
                                     let mut stack = BacktrackingStack::new();
+                                    let mut counter = 0;  // Initialize counter
+                                    let solution = solver::solve(&query_expr, db, &mut stack, &mut counter);
+
                     
-                                    // ✅ Call the solver with backtracking support
-                                    let solution = solver::solve(&query_expr, db, &mut stack);
-                    
-                                    // ✅ If no solution is found, backtrack and try alternatives
+                                    // If no solution is found, backtrack and try alternatives
                                     let final_solution = match solution {
                                         Some(sol) => Some(sol),
                                         None => {
                                             while let Some(choice) = stack.pop() {
-                                                let retry_solution = solver::solve(&Expression::Term(choice.alternatives[0].clone()), db, &mut stack);
+                                                let retry_solution = solver::solve(&Expression::Term(choice.alternatives[0].clone()), db, &mut stack, &mut counter);
                                                 if retry_solution.is_some() {
                                                     break;
                                                 }
@@ -107,10 +106,10 @@ impl App for PrologApp {
                                         }
                                     };
                     
-                                    // ✅ Format the result
+                                    // Format the result
                                     let result = result::get_result(&self.query_text, final_solution);
                     
-                                    // ✅ Add to history
+                                    // Add to history
                                     self.query_history.push(result);
                                 }
                                 Err(_) => {

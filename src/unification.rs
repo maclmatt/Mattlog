@@ -100,13 +100,16 @@ impl Substitution {
     pub fn resolve(&self, term: &Term) -> Term {
         match term {
             Term::Variable(var) => {
-                if let Some(substituted) = self.get(var) {  // Use get() instead of accessing 0 directly
-                    self.resolve(substituted) // Recursively resolve substitutions
+                if let Some(val) = self.get(var) {
+                    self.resolve(val)
                 } else {
-                    term.clone() // If not found, return as is
+                    term.clone()
                 }
             }
-            _ => term.clone(), // If it's not a variable, return as is
+            Term::Compound(name, args) => {
+                Term::Compound(name.clone(), args.iter().map(|t| self.resolve(t)).collect())
+            }
+            _ => term.clone(),
         }
     }
 
