@@ -30,12 +30,6 @@ impl Substitution {
                 let new_tail = Box::new(self.apply(tail));
                 Term::List(new_head, new_tail)
             }
-    
-            Term::Conjunct(left, right) => {
-                let new_left = Box::new(self.apply(left));
-                let new_right = Box::new(self.apply(right));
-                Term::Conjunct(new_left, new_right)
-            }
         }
     }  
 

@@ -76,13 +76,17 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             let mut local_subs = subs.clone();
 
             if unify(term, first_head, &mut local_subs) {
+                // Explicitly apply substitutions to both head and body terms
+                let resolved_head = first_head.apply(&local_subs);
                 let applied_body = first_body.apply(&local_subs);
+
                 *counter += 1;  // Increment counter for recursive calls
 
                 if let Some(body_subs) = solve(&applied_body, db, stack, counter) {
                     return local_subs.merge(&body_subs);
                 }
             }
+
         }
     }
 
@@ -99,10 +103,6 @@ fn rename_vars(term: &Term, suffix: usize) -> Term {
         Term::List(head, tail) => Term::List(
             Box::new(rename_vars(head, suffix)),
             Box::new(rename_vars(tail, suffix)),
-        ),
-        Term::Conjunct(left, right) => Term::Conjunct(
-            Box::new(rename_vars(left, suffix)),
-            Box::new(rename_vars(right, suffix)),
         ),
         _ => term.clone(),
     }
@@ -143,10 +143,6 @@ fn extract_variables(term: &Term) -> Vec<String> {
         Term::List(head, tail) => {
             vars.extend(extract_variables(head));
             vars.extend(extract_variables(tail));
-        }
-        Term::Conjunct(left, right) => {
-            vars.extend(extract_variables(left));
-            vars.extend(extract_variables(right));
         }
         _ => {}
     }

@@ -1,4 +1,4 @@
-use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, variable, atom, compound, conjunct, fact, rule, Term as TreeTerm, Expr as TreeExpr };
+use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, Term as TreeTerm, Expr as TreeExpr };
 use crate::unification::Substitution;
 use std::fmt;
 
@@ -10,34 +10,9 @@ pub enum Term {
     Integer(i64),
     List(Box<Term>, Box<Term>), // Represents lists (head | tail)
     EmptyList,
-    Conjunct(Box<Term>, Box<Term>),
 }
 
 impl Term {
-    pub fn compound(name: &str, args: Vec<Term>) -> Self {
-        Term::Compound(name.to_string(), args)
-    }
-
-    // You may also add methods to create other kinds of terms
-    pub fn constant(value: &str) -> Self {
-        Term::Constant(value.to_string())
-    }
-
-    pub fn variable(name: &str) -> Self {
-        Term::Variable(name.to_string())
-    }
-
-    pub fn integer(value: i64) -> Self {
-        Term::Integer(value)
-    }
-
-    pub fn list(head: Term, tail: Term) -> Self {
-        Term::List(Box::new(head), Box::new(tail))
-    }
-
-    pub fn is_list(&self) -> bool {
-        matches!(self, Term::List(_, _) | Term::EmptyList)
-    }
 
     pub fn from_tree_term(tree_term: TreeTerm) -> Self {
         match *tree_term {  // Use the getter method
@@ -57,18 +32,19 @@ impl Term {
         }
     }
 
-    pub fn from_tree_expr(tree_expr: TreeExpr) -> Self {
-        match *tree_expr {
-            ExprKind::Term(term) => Term::from_tree_term(term), // Base case: single term
-            ExprKind::Conjunct(lhs, rhs) => {
-                // Convert conjunctive expressions into nested Compound terms
-                Term::Compound("and".to_string(), vec![
-                    Term::from_tree_expr(lhs),
-                    Term::from_tree_expr(rhs)
-                ])
-            }
-        }
-    }
+    // Remove this unused function from terms.rs entirely:
+    // pub fn from_tree_expr(tree_expr: TreeExpr) -> Self {
+    //     match *tree_expr {
+    //         ExprKind::Term(term) => Term::from_tree_term(term),
+    //         ExprKind::Conjunct(lhs, rhs) => {
+    //             Term::Compound("and".to_string(), vec![
+    //                 Term::from_tree_expr(lhs),
+    //                 Term::from_tree_expr(rhs)
+    //             ])
+    //         }
+    //     }
+    // }
+
 
     pub fn apply(&self, subs: &Substitution) -> Term {
         match self {
@@ -103,7 +79,6 @@ impl fmt::Display for Term {
             }
             Term::List(head, tail) => write!(f, "[{} | {}]", head, tail),
             Term::EmptyList => write!(f, "[]"),
-            Term::Conjunct(left, right) => write!(f, "{} , {}", left, right),
         }
     }
 }
@@ -173,39 +148,3 @@ impl Expression {
         }
     }
 }
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_term_creation() {
-        // Testing constants
-        let constant = Term::constant("a");
-        assert_eq!(constant, Term::Constant("a".to_string()));
-
-        // Testing variables
-        let variable = Term::variable("X");
-        assert_eq!(variable, Term::Variable("X".to_string()));
-
-        // Testing compound terms
-        let compound = Term::compound("nth", vec![
-            Term::variable("X"), 
-            Term::integer(0), 
-            Term::variable("X")
-        ]);
-        assert_eq!(compound, Term::Compound("nth".to_string(), vec![
-            Term::Variable("X".to_string()), 
-            Term::Integer(0), 
-            Term::Variable("X".to_string())
-        ]));
-
-        // Testing a list (Head | Tail)
-        let list = Term::list(Term::integer(1), Term::EmptyList);
-        assert_eq!(list, Term::List(Box::new(Term::Integer(1)), Box::new(Term::EmptyList)));
-    }
-}
-
-

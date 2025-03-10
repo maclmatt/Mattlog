@@ -61,8 +61,5 @@ fn format_term(term: &Term, subs: &Substitution) -> String {
             }
         }
         Term::EmptyList => "[]".to_string(),
-        Term::Conjunct(left, right) => {
-            format!("{}, {}", format_term(left, subs), format_term(right, subs))
-        }
     }
 }

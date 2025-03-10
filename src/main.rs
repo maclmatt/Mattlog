@@ -36,18 +36,11 @@ impl Default for PrologApp {
 impl App for PrologApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
+            ui.horizontal_centered(|ui| {
                 // Left side: Rules section
                 ui.vertical(|ui| {
                     ui.heading("Rule Tree");
-                    ui.allocate_ui_with_layout(
-                        egui::Vec2::new(300.0, 400.0), // Fixed size: 300 wide, 400 tall
-                        egui::Layout::top_down(egui::Align::LEFT),
-                        |ui| {
-                            ui.text_edit_multiline(&mut self.rules_text);
-                        },
-                    );
-                    
+
                     if ui.button("Load Rules from File").clicked() {
                         let file_path = "program.pl"; // Simplified — replace if needed
                         match fs::read_to_string(file_path) {
@@ -56,6 +49,14 @@ impl App for PrologApp {
                         }
                     }
 
+                    ui.allocate_ui_with_layout(
+                        egui::Vec2::new(300.0, 400.0), // Fixed size: 300 wide, 400 tall
+                        egui::Layout::top_down(egui::Align::LEFT),
+                        |ui| {
+                            ui.text_edit_multiline(&mut self.rules_text);
+                        },
+                    );
+                    
                     if ui.button("Parse Rules").clicked() {
                         match parse(&self.rules_text) {
                             Ok(tree_clauses) => {
