@@ -36,104 +36,116 @@ impl Default for PrologApp {
 impl App for PrologApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal_centered(|ui| {
+            ui.horizontal(|ui| {
                 // Left side: Rules section
                 ui.vertical(|ui| {
                     ui.heading("Rule Tree");
 
-                    if ui.button("Load Rules from File").clicked() {
-                        let file_path = "program.pl"; // Simplified — replace if needed
-                        match fs::read_to_string(file_path) {
-                            Ok(content) => self.rules_text = content,
-                            Err(err) => self.query_history.push(format!("Failed to load file: {}", err)),
-                        }
-                    }
+                    ui.add_space(5.0);
+                    ui.group(|ui| {
+                        ui.add_sized(
+                            [320.0, 400.0],
+                            egui::TextEdit::multiline(&mut self.rules_text)
+                                .font(egui::TextStyle::Monospace),
+                        );
+                    });
 
-                    ui.allocate_ui_with_layout(
-                        egui::Vec2::new(300.0, 400.0), // Fixed size: 300 wide, 400 tall
-                        egui::Layout::top_down(egui::Align::LEFT),
-                        |ui| {
-                            ui.text_edit_multiline(&mut self.rules_text);
-                        },
-                    );
-                    
-                    if ui.button("Parse Rules").clicked() {
-                        match parse(&self.rules_text) {
-                            Ok(tree_clauses) => {
-                                let clauses = tree_clauses
-                                    .into_iter()
-                                    .map(Clause::from_tree_clause)
-                                    .collect();
-                                self.db = Some(Database::new(clauses));
-                                self.query_history.push("Rules parsed successfully.".to_string());
-                            }
-                            Err(_) => {
-                                self.query_history.push("Failed to parse rules.".to_string());
+                    ui.add_space(10.0);
+
+                    ui.horizontal_centered(|ui| {
+                        if ui.button("Load Rules").clicked() {
+                            let file_path = "program.pl";
+                            match fs::read_to_string(file_path) {
+                                Ok(content) => self.rules_text = content,
+                                Err(err) => self.query_history.push(format!("Failed to load file: {}", err)),
                             }
                         }
-                    }
+
+                        if ui.button("Parse Rules").clicked() {
+                            match parse(&self.rules_text) {
+                                Ok(tree_clauses) => {
+                                    let clauses = tree_clauses
+                                        .into_iter()
+                                        .map(Clause::from_tree_clause)
+                                        .collect();
+                                    self.db = Some(Database::new(clauses));
+                                    self.query_history.push("Rules parsed successfully.".to_string());
+                                }
+                                Err(_) => {
+                                    self.query_history.push("Failed to parse rules.".to_string());
+                                }
+                            }
+                        }
+                    });
                 });
+
+                ui.separator();
 
                 // Right side: Query section (Input & History)
                 ui.vertical(|ui| {
                     ui.heading("Query & Results");
+                    ui.add_space(5.0);
 
-                    ui.label("Current Query");
-                    ui.text_edit_singleline(&mut self.query_text);
+                    ui.label("Current Query:");
+                    ui.add(egui::TextEdit::singleline(&mut self.query_text));
 
-                    if ui.button("Run Query").clicked() {
-                        if let Some(ref db) = self.db {
-                            match parse_query(&self.query_text) {
-                                Ok(parsed_query) => {
-                                    let query = Term::from_tree_term(parsed_query);
-                                    let query_expr = Expression::from_term(query);
-                    
-                                    let mut stack = BacktrackingStack::new();
-                                    let mut counter = 0;  // Initialize counter
-                                    let solution = solver::solve(&query_expr, db, &mut stack, &mut counter);
+                    ui.add_space(10.0);
 
-                    
-                                    // If no solution is found, backtrack and try alternatives
-                                    let final_solution = match solution {
-                                        Some(sol) => Some(sol),
-                                        None => {
-                                            while let Some(choice) = stack.pop() {
-                                                let retry_solution = solver::solve(&Expression::Term(choice.alternatives[0].clone()), db, &mut stack, &mut counter);
-                                                if retry_solution.is_some() {
-                                                    break;
+                    ui.horizontal(|ui| {
+                        if ui.button("Run Query").clicked() {
+                            if let Some(ref db) = self.db {
+                                match parse_query(&self.query_text) {
+                                    Ok(parsed_query) => {
+                                        let query = Term::from_tree_term(parsed_query);
+                                        let query_expr = Expression::from_term(query);
+
+                                        let mut stack = BacktrackingStack::new();
+                                        let mut counter = 0;
+                                        let solution = solver::solve(&query_expr, db, &mut stack, &mut counter);
+
+                                        let final_solution = match solution {
+                                            Some(sol) => Some(sol),
+                                            None => {
+                                                while let Some(choice) = stack.pop() {
+                                                    let retry_solution = solver::solve(&Expression::Term(choice.alternatives[0].clone()), db, &mut stack, &mut counter);
+                                                    if retry_solution.is_some() {
+                                                        break;
+                                                    }
                                                 }
+                                                None
                                             }
-                                            None
-                                        }
-                                    };
-                    
-                                    // Format the result
-                                    let result = result::get_result(&self.query_text, final_solution);
-                    
-                                    // Add to history
-                                    self.query_history.push(result);
+                                        };
+
+                                        let result = result::get_result(&self.query_text, final_solution);
+
+                                        self.query_history.push(result);
+                                    }
+                                    Err(_) => {
+                                        self.query_history.push(format!("{} => Invalid query format", self.query_text));
+                                    }
                                 }
-                                Err(_) => {
-                                    self.query_history.push(format!("{} => Invalid query format", self.query_text));
-                                }
+                            } else {
+                                self.query_history.push("No rules loaded. Please parse rules first.".to_string());
                             }
-                        } else {
-                            self.query_history.push("No rules loaded. Please parse rules first.".to_string());
                         }
-                    }
-                    
+                    });
 
-                    ui.separator();
+                    ui.add_space(10.0);
 
-                    ui.label("Query History:");
-                    for entry in &self.query_history {
-                        ui.label(entry);
-                    }
+                    ui.heading("Query History:");
+                    egui::ScrollArea::vertical().max_height(380.0).show(ui, |ui| {
+                        for entry in &self.query_history {
+                            ui.group(|ui| {
+                                ui.label(entry);
+                            });
+                        }
+                    });
                 });
             });
         });
     }
 }
+
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions::default();
