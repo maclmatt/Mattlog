@@ -9,7 +9,6 @@ mod environment;
 
 use database::Database;
 use parser::parser::{parse, parse_query};
-use solver::solve;
 use terms::{Clause, Term, Expression};
 use eframe::{egui, App, Frame};
 use std::fs;
@@ -105,7 +104,7 @@ impl App for PrologApp {
 
                                         let final_solution = match solution {
                                             Some(sol) => Some(sol),
-                                            None => {
+                                            _none => {
                                                 while let Some(choice) = stack.pop() {
                                                     let retry_solution = solver::solve(&Expression::Term(choice.alternatives[0].clone()), db, &mut stack, &mut counter);
                                                     if retry_solution.is_some() {

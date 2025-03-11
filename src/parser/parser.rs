@@ -266,7 +266,7 @@ fn parse_term_with_prec(input: &mut Peekable<Lexer>, min_prec: u8) -> Result<Ter
 
             let next_prec = match operator_precedence(&next_op) {
                 Some(prec) => prec,
-                None => break,
+                _none => break,
             };
 
             if next_prec <= op_prec {
@@ -338,7 +338,7 @@ pub fn parse_query(text: &str) -> Result<Term, ParseError> {
     match input.next() {
         Some(Token::Period) => Ok(term),
         Some(token) => Err(ParseError::UnexpectedToken(token)),
-        None => Err(ParseError::UnexpectedEof),
+        _none => Err(ParseError::UnexpectedEof),
     }
 }
 

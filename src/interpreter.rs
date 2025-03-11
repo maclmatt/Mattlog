@@ -60,7 +60,7 @@ impl Interpreter {
         }
     }
 
-    fn get_alternatives(&self, predicate: &str) -> Option<Vec<Term>> {
+    fn get_alternatives(&self, _predicate: &str) -> Option<Vec<Term>> {
         // Retrieve alternative rules for a predicate.
         None
     }

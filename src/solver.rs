@@ -3,7 +3,6 @@ use crate::terms::{Clause, Term, Expression};
 use crate::unification::{Substitution, unify};
 use crate::backtracking::{BacktrackingStack, ChoicePoint};
 use crate::environment::Environment;
-use std::collections::HashMap;
 
 pub fn solve(query: &Expression, db: &Database, stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
     match query {
@@ -65,7 +64,7 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
         }
 
         if !matching_clauses.is_empty() {
-            for (head, body) in &matching_clauses[1..] {
+            for (_head, _body) in &matching_clauses[1..] {
                 stack.push(ChoicePoint {
                     env: Environment::new(),
                     alternatives: vec![Term::Compound(name.clone(), args.clone())],
@@ -77,7 +76,7 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
 
             if unify(term, first_head, &mut local_subs) {
                 // Explicitly apply substitutions to both head and body terms
-                let resolved_head = first_head.apply(&local_subs);
+                let _resolved_head = first_head.apply(&local_subs);
                 let applied_body = first_body.apply(&local_subs);
 
                 *counter += 1;  // Increment counter for recursive calls
@@ -122,61 +121,6 @@ fn rename_expr(expr: &Expression, suffix: usize) -> Expression {
             Box::new(rename_expr(lhs, suffix)),
             Box::new(rename_expr(rhs, suffix)),
         ),
-    }
-}
-
-// Finds an appropriate replacement variable for reassignment
-fn find_replacement_var(var: &str, retained_vars: &[String]) -> Option<String> {
-    retained_vars.iter().find(|&&ref v| v != var).cloned()
-}
-
-// Extracts all variables present in a term recursively
-fn extract_variables(term: &Term) -> Vec<String> {
-    let mut vars = Vec::new();
-    match term {
-        Term::Variable(var) => vars.push(var.clone()),
-        Term::Compound(_, args) => {
-            for arg in args {
-                vars.extend(extract_variables(arg));
-            }
-        }
-        Term::List(head, tail) => {
-            vars.extend(extract_variables(head));
-            vars.extend(extract_variables(tail));
-        }
-        _ => {}
-    }
-    vars
-}
-
-// Reassigns values before removing unnecessary bindings for all recursive rules
-fn reassign_and_cleanup_bindings(subs: &mut Substitution, term: &Term) {
-    let retained_vars: Vec<String> = extract_variables(term);
-    println!("Retained variables: {:?}", retained_vars);
-
-    let mut removed_vars: Vec<String> = vec![];
-    let mut reassignments: Vec<(String, Term)> = vec![];
-
-    for (var, value) in subs.iter().map(|(k, v)| (k.clone(), v.clone())).collect::<Vec<_>>() {
-        if !retained_vars.contains(&var) {
-            // Find a logical replacement if it exists
-            if let Some(replacement_var) = find_replacement_var(&var, &retained_vars) {
-                println!("Reassigning {} to {}", var, replacement_var);
-                reassignments.push((replacement_var, value));
-            }
-            removed_vars.push(var);
-        }
-    }
-
-    // Apply reassignments before removing variables
-    for (new_var, value) in reassignments {
-        subs.extend(new_var, value);
-    }
-
-    println!("Variables to remove: {:?}", removed_vars);
-    for var in removed_vars {
-        println!("Removing variable: {}", var);
-        subs.remove(&var);
     }
 }
 

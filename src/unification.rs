@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::collections::HashMap;
 use crate::terms::Term;
 
@@ -51,14 +50,6 @@ impl Substitution {
         Some(merged)
     }
 
-    pub fn merged_with(&self, other: &Substitution) -> Substitution {
-        let mut new_subs = self.clone();
-        for (var, term) in &other.0 {
-            new_subs.extend(var.clone(), term.clone());
-        }
-        new_subs
-    } 
-
     pub fn allow_merge(&mut self, other: &Substitution) -> bool {
         // Collect all conflicting variables first (to avoid mutable borrowing errors)
         let conflicts: Vec<_> = other.0.iter()
@@ -79,47 +70,9 @@ impl Substitution {
         self.0.len() > initial_size // Return true if new substitutions were added
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
     pub fn get(&self, var: &str) -> Option<&Term> {
         self.0.get(var) // Access the internal map safely
     }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&String, &Term)> {
-        self.0.iter()
-    }
-
-    pub fn resolve(&self, term: &Term) -> Term {
-        match term {
-            Term::Variable(var) => {
-                if let Some(val) = self.get(var) {
-                    self.resolve(val)
-                } else {
-                    term.clone()
-                }
-            }
-            Term::Compound(name, args) => {
-                Term::Compound(name.clone(), args.iter().map(|t| self.resolve(t)).collect())
-            }
-            _ => term.clone(),
-        }
-    }
-
-    pub fn remove(&mut self, var: &str) {
-        if self.0.contains_key(var) {
-            self.0.remove(var);
-            println!("Removed binding for {}", var);
-        }
-    }
-
-    pub fn remove_multiple(&mut self, vars: Vec<String>) {
-        for var in vars {
-            self.remove(&var);
-        }
-    }
-
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {

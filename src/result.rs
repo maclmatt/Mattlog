@@ -1,7 +1,5 @@
 use crate::terms::Term;
 use crate::unification::Substitution;
-use std::collections::HashSet;
-use regex::Regex;
 
 pub fn get_result(query_text: &str, solution: Option<Substitution>) -> String {
     match solution {
@@ -21,7 +19,7 @@ pub fn get_result(query_text: &str, solution: Option<Substitution>) -> String {
                 format!("{} => {}", query_text, results.join(", "))
             }
         }
-        None => format!("{} => false", query_text),
+        _none => format!("{} => false", query_text),
     }
 }
 

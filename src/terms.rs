@@ -1,4 +1,4 @@
-use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, Term as TreeTerm, Expr as TreeExpr };
+use crate::parser::tree::{ TermKind, ExprKind, Clause as TreeClause, Term as TreeTerm };
 use crate::unification::Substitution;
 use std::fmt;
 
@@ -100,15 +100,6 @@ impl Clause {
             ),
         }
     }
-
-    fn convert_body(body: Vec<TreeTerm>) -> Term {
-        let mut terms = body.into_iter().map(Term::from_tree_term);
-        let first = terms.next().expect("Rule body cannot be empty");
-
-        terms.fold(first, |acc, next| {
-            Term::Compound("and".to_string(), vec![acc, next]) // Use Compound to represent conjunction
-        })
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -138,13 +129,5 @@ impl Expression {
     }
     pub fn from_term(term: Term) -> Self {
         Expression::Term(term)  // Wraps a single term into an expression
-    }
-
-    pub fn unwrap_term(&self) -> Option<&Term> {
-        if let Expression::Term(term) = self {
-            Some(term)
-        } else {
-            None
-        }
     }
 }
