@@ -64,6 +64,27 @@ impl Term {
             _ => self.clone()
         }
     }
+
+    pub fn from_vec(vec: &[Term]) -> Self {
+        vec.iter().rev().fold(Term::EmptyList, |acc, x| {
+            Term::List(Box::new(x.clone()), Box::new(acc))
+        })
+    }
+
+    pub fn to_vec(&self) -> Option<Vec<Term>> {
+        let mut terms = vec![];
+        let mut current = self;
+
+        while let Term::List(head, tail) = current {
+            terms.push((**head).clone());
+            current = tail;
+        }
+        if matches!(current, Term::EmptyList) {
+            Some(terms)
+        } else {
+            None
+        }
+    }
     
 }
 

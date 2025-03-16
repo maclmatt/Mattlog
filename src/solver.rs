@@ -47,6 +47,10 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             };            
         }
 
+        if name == "append" && args.len() == 3 {
+            return builtin_append(args); // Call your built-in append function
+        }
+
         let mut matching_clauses = vec![];
 
         for clause in &db.clauses {
@@ -162,3 +166,57 @@ fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
 
 // Operators we want to handle
 const RELATIONAL_OPERATORS: [&str; 6] = ["<", ">", "=<", ">=", "=", "\\="];
+
+fn builtin_append(args: &[Term]) -> Option<Substitution> {
+    if args.len() != 3 {
+        return None;
+    }
+
+    let list1 = &args[0];
+    let list2 = &args[1];
+    let result = &args[2];
+
+    // Try converting terms to Vec representations
+    match (list1.to_vec(), list2.to_vec(), result.to_vec()) {
+        (Some(vec1), Some(vec2), _) => {
+            // Both input lists known, unify combined with result
+            let combined = [vec1, vec2].concat();
+            let combined_term = Term::from_vec(&combined);
+            let mut subs = Substitution::new();
+            if unify(&args[2], &combined_term, &mut subs) {
+                Some(subs)
+            } else {
+                None
+            }
+        }
+        (Some(vec1), None, Some(result_vec)) => {
+            // First list and result known, calculate second list
+            if result_vec.starts_with(&vec1) {
+                let remaining = &result_vec[vec1.len()..];
+                let mut subs = Substitution::new();
+                if unify(&args[1], &Term::from_vec(remaining), &mut subs) {
+                    Some(subs)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        (None, Some(vec2), Some(result_vec)) => {
+            // Second list and result known, unify to find first list
+            if result_vec.ends_with(&vec2) {
+                let prefix = &result_vec[..result_vec.len() - vec2.len()];
+                let mut subs = Substitution::new();
+                if unify(&args[0], &Term::from_vec(prefix), &mut subs) {
+                    Some(subs)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
