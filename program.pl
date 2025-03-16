@@ -16,3 +16,8 @@ head_plus_2([H|Y], X) :- X is H + 2.
 
 factorial(0, 1).
 factorial(N, F) :- N > 0, N1 is N - 1, factorial(N1, F1), F is N * F1.
+
+tac([], []).
+tac([H|T], Reversed) :- 
+    tac(T, RevT), 
+    append(RevT, [H], Reversed).

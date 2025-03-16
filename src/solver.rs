@@ -51,6 +51,10 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             return builtin_append(args); // Call your built-in append function
         }
 
+        if name == "member" && args.len() == 2 {
+            return builtin_member(args)
+        }
+
         let mut matching_clauses = vec![];
 
         for clause in &db.clauses {
@@ -220,3 +224,29 @@ fn builtin_append(args: &[Term]) -> Option<Substitution> {
         _ => None,
     }
 }
+
+fn builtin_member(args: &[Term]) -> Option<Substitution> {
+    if args.len() != 2 {
+        return None; // Ensure correct arity
+    }
+
+    let element = &args[0];  // The item we're checking for
+    let list = &args[1];     // The list to check
+
+    match list {
+        Term::List(head, tail) => {
+            let mut subs = Substitution::new();
+
+            // First, check if element matches the head of the list
+            if unify(element, head, &mut subs) {
+                return Some(subs);
+            }
+
+            // Otherwise, check recursively in the tail
+            builtin_member(&[element.clone(), tail.as_ref().clone()])
+        }
+        Term::EmptyList => None, // Member of an empty list fails
+        _ => None, // Not a valid list structure
+    }
+}
+
