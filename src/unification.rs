@@ -62,10 +62,10 @@ impl Substitution {
 
     pub fn merge(&self, other: &Substitution) -> Option<Substitution> {
         if other.0.is_empty() {
-            return Some(self.clone()); // ✅ If `other` is empty, return `self`
+            return Some(self.clone()); // If `other` is empty, return `self`
         }
         if self.0.is_empty() {
-            return Some(other.clone()); // ✅ If `self` is empty, return `other`
+            return Some(other.clone()); // If `self` is empty, return `other`
         }
 
         let mut merged = self.clone();
@@ -73,10 +73,10 @@ impl Substitution {
         for (key, value) in &other.0 {
             if let Some(existing) = merged.0.get(key) {
                 if existing != value {
-                    return None; // ❌ Conflict detected
+                    return None; // Conflict detected
                 }
             } else {
-                merged.0.insert(key.clone(), value.clone()); // ✅ Correctly update the HashMap
+                merged.0.insert(key.clone(), value.clone()); // Correctly update the HashMap
             }
         }
 

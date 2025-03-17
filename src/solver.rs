@@ -125,7 +125,7 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
                 
                     if merged.is_none() {
                         println!("DEBUG: Merge failed unexpectedly, returning empty substitution instead.");
-                        return Some(Substitution::new());  // ✅ Ensure at least an empty substitution is returned
+                        return Some(Substitution::new());  // Ensure at least an empty substitution is returned
                     }
                 
                     println!("DEBUG: Returning merged substitution: {:?}", merged);
