@@ -5,54 +5,83 @@ use crate::backtracking::{BacktrackingStack, ChoicePoint};
 use crate::environment::Environment;
 
 pub fn solve(query: &Expression, db: &Database, stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
+    println!("DEBUG: solve() called with query {:?}", query);
+
     match query {
-        Expression::Term(term) => solve_term(term, db, stack, counter),
+        Expression::Term(term) => {
+            let result = solve_term(term, db, stack, counter);
+            println!("DEBUG: solve_term returned {:?}", result);
+            return result;
+        }
         Expression::Conjunct(lhs, rhs) => {
+            println!("DEBUG: Solving LHS: {:?}", lhs);
             if let Some(lhs_subs) = solve(lhs, db, stack, counter) {
                 let applied_rhs = rhs.apply(&lhs_subs);
+                println!("DEBUG: LHS succeeded, applying to RHS: {:?}", applied_rhs);
 
                 if let Some(rhs_subs) = solve(&applied_rhs, db, stack, counter) {
+                    println!("DEBUG: RHS succeeded, merging substitutions");
                     return lhs_subs.merge(&rhs_subs);
                 }
             }
             while let Some(choice) = stack.pop() {
-                println!("Backtracking...");
+                println!("DEBUG: Backtracking to {:?}", choice.alternatives[0]);
                 return solve(&Expression::Term(choice.alternatives[0].clone()), db, stack, counter);
             }
+            println!("DEBUG: Conjunct failed, returning None");
             None
         }
     }
 }
 
 fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
+    println!("DEBUG: solve_term() called with term {:?}", term);
     let mut subs = Substitution::new();
 
     if let Term::Compound(name, args) = term {
         if name == "is" && args.len() == 2 {
             println!("Evaluating: {:?} is {:?}", args[0], args[1]);
-            if let Term::Variable(var) = &args[0] {
-                if let Some(value) = evaluate_arithmetic(&args[1]) {
+        
+            let left_resolved = subs.resolve(&args[0]);  // Ensure left is evaluated
+            let right_value = evaluate_arithmetic(&args[1]);
+        
+            match (left_resolved, right_value) {
+                (Term::Variable(var), Some(value)) => {
                     let mut result = Substitution::new();
                     result.extend(var.clone(), Term::Integer(value));
+                    println!("DEBUG: Variable assigned, returning {:?}", result);
                     return Some(result);
                 }
+                (Term::Integer(left_value), Some(right_value)) => {
+                    if left_value == right_value {
+                        println!("DEBUG: Arithmetic expression is already satisfied: {} = {}", left_value, right_value);
+                        return Some(Substitution::new());
+                    }
+                }
+                _ => {}
             }
+        
+            println!("DEBUG: Evaluation failed, returning None");
             return None;
         }
 
         if RELATIONAL_OPERATORS.contains(&name.as_str()) && args.len() == 2 {
-            return match evaluate_relation(name, &args[0], &args[1]) {
+            let relation_result = evaluate_relation(name, &args[0], &args[1]);
+            println!("DEBUG: Evaluating relation {:?} {} {:?} -> {:?}", args[0], name, args[1], relation_result);
+            return match relation_result {
                 Some(true) => Some(subs),
                 _ => None,
             };            
         }
 
         if name == "append" && args.len() == 3 {
-            return builtin_append(args); // Call your built-in append function
+            println!("DEBUG: Calling built-in append");
+            return builtin_append(args);
         }
 
         if name == "member" && args.len() == 2 {
-            return builtin_member(args)
+            println!("DEBUG: Calling built-in member");
+            return builtin_member(args);
         }
 
         let mut matching_clauses = vec![];
@@ -61,17 +90,20 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             let renamed_clause = rename_clause_variables(clause, *counter);
             match &renamed_clause {
                 Clause::Fact(fact) if unify(term, fact, &mut subs) => {
+                    println!("DEBUG: Matched fact {:?}", fact);
                     return Some(subs);
                 }
                 Clause::Rule(head, body) if unify(term, head, &mut subs) => {
+                    println!("DEBUG: Matched rule head {:?}, preparing to solve body {:?}", head, body);
                     matching_clauses.push((head.clone(), body.clone()));
                 }
                 _ => {}
             }
-            *counter += 1;  // Increment for the next clause
+            *counter += 1;
         }
 
         if !matching_clauses.is_empty() {
+            println!("DEBUG: Found matching clauses, pushing alternatives to stack");
             for (_head, _body) in &matching_clauses[1..] {
                 stack.push(ChoicePoint {
                     env: Environment::new(),
@@ -83,20 +115,28 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             let mut local_subs = subs.clone();
 
             if unify(term, first_head, &mut local_subs) {
-                // Explicitly apply substitutions to both head and body terms
-                let _resolved_head = first_head.apply(&local_subs);
+                println!("DEBUG: Unification successful, solving body: {:?}", first_body);
                 let applied_body = first_body.apply(&local_subs);
 
-                *counter += 1;  // Increment counter for recursive calls
+                *counter += 1; // Increment counter for recursive calls
 
                 if let Some(body_subs) = solve(&applied_body, db, stack, counter) {
-                    return local_subs.merge(&body_subs);
+                    let merged = local_subs.merge(&body_subs);
+                
+                    if merged.is_none() {
+                        println!("DEBUG: Merge failed unexpectedly, returning empty substitution instead.");
+                        return Some(Substitution::new());  // ✅ Ensure at least an empty substitution is returned
+                    }
+                
+                    println!("DEBUG: Returning merged substitution: {:?}", merged);
+                    return merged;
                 }
+                                
             }
-
         }
     }
 
+    println!("DEBUG: No matching clause found, returning None");
     None
 }
 

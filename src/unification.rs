@@ -9,6 +9,22 @@ impl Substitution {
         Substitution(HashMap::new())
     }
 
+    pub fn resolve(&self, term: &Term) -> Term {
+        match term {
+            Term::Variable(var) => {
+                if let Some(val) = self.get(var) {
+                    self.resolve(val)
+                } else {
+                    term.clone()
+                }
+            }
+            Term::Compound(name, args) => {
+                Term::Compound(name.clone(), args.iter().map(|t| self.resolve(t)).collect())
+            }
+            _ => term.clone(),
+        }
+    }
+
     pub fn apply(&self, term: &Term) -> Term {
         match term {
             Term::Variable(name) => {
@@ -36,17 +52,34 @@ impl Substitution {
         self.0.insert(var, term);
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Term)> {
+        self.0.iter()
+    }
+
     pub fn merge(&self, other: &Substitution) -> Option<Substitution> {
+        if other.0.is_empty() {
+            return Some(self.clone()); // ✅ If `other` is empty, return `self`
+        }
+        if self.0.is_empty() {
+            return Some(other.clone()); // ✅ If `self` is empty, return `other`
+        }
+
         let mut merged = self.clone();
-    
-        if !merged.allow_merge(other) {
-            return None;  // Conflict detected
+        
+        for (key, value) in &other.0 {
+            if let Some(existing) = merged.0.get(key) {
+                if existing != value {
+                    return None; // ❌ Conflict detected
+                }
+            } else {
+                merged.0.insert(key.clone(), value.clone()); // ✅ Correctly update the HashMap
+            }
         }
-    
-        for (var, term) in &other.0 {
-            merged.extend(var.clone(), term.clone());
-        }
-    
+
         Some(merged)
     }
 
