@@ -71,14 +71,6 @@ impl Term {
         })
     }
 
-    pub fn len(&self) -> usize {
-        match self {
-            Term::List(_, tail) => 1 + tail.len(),
-            Term::EmptyList => 0,
-            _ => panic!("len() called on non-list term"),
-        }
-    }
-
     pub fn to_vec(&self) -> Option<Vec<Term>> {
         let mut terms = vec![];
         let mut current = self;
@@ -166,5 +158,70 @@ impl Expression {
     }
     pub fn from_term(term: Term) -> Self {
         Expression::Term(term)  // Wraps a single term into an expression
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_constant() {
+        let term = Term::Constant("hello".to_string());
+        assert_eq!(term, Term::Constant("hello".to_string()));
+    }
+
+    #[test]
+    fn test_create_variable() {
+        let term = Term::Variable("X".to_string());
+        assert_eq!(term, Term::Variable("X".to_string()));
+    }
+
+    #[test]
+    fn test_create_compound() {
+        let term = Term::Compound("parent".to_string(), vec![
+            Term::Constant("john".to_string()),
+            Term::Constant("mary".to_string()),
+        ]);
+        assert_eq!(
+            term,
+            Term::Compound(
+                "parent".to_string(),
+                vec![
+                    Term::Constant("john".to_string()),
+                    Term::Constant("mary".to_string())
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn test_apply_substitution() {
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Constant("john".to_string()));
+
+        let term = Term::Variable("X".to_string()).apply(&subs);
+        assert_eq!(term, Term::Constant("john".to_string()));
+    }
+
+    #[test]
+    fn test_list_from_vec() {
+        let terms = vec![
+            Term::Integer(1),
+            Term::Integer(2),
+            Term::Integer(3),
+        ];
+        let list = Term::list_from_vec(terms.clone());
+        let back_to_vec = list.to_vec().unwrap();
+        assert_eq!(back_to_vec, terms);
+    }
+
+    #[test]
+    fn test_display() {
+        let term = Term::Compound("likes".to_string(), vec![
+            Term::Constant("john".to_string()),
+            Term::Constant("pizza".to_string()),
+        ]);
+        assert_eq!(format!("{}", term), "likes(john, pizza)");
     }
 }

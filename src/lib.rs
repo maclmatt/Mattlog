@@ -6,3 +6,5 @@ pub mod interpreter;
 pub mod unification;
 pub mod database;
 pub mod parser;
+pub mod solver;
+pub mod builtins;

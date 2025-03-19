@@ -23,7 +23,7 @@ pub fn builtin_append(args: &[Term]) -> Option<Substitution> {
                 None
             }
         }
-        (Some(vec1), None, Some(result_vec)) => {
+        (Some(vec1), _none, Some(result_vec)) => {
             // First list and result known, calculate second list
             if result_vec.starts_with(&vec1) {
                 let remaining = &result_vec[vec1.len()..];
@@ -37,7 +37,7 @@ pub fn builtin_append(args: &[Term]) -> Option<Substitution> {
                 None
             }
         }
-        (None, Some(vec2), Some(result_vec)) => {
+        (_none, Some(vec2), Some(result_vec)) => {
             // Second list and result known, unify to find first list
             if result_vec.ends_with(&vec2) {
                 let prefix = &result_vec[..result_vec.len() - vec2.len()];
@@ -127,7 +127,7 @@ pub fn builtin_length(args: &[Term]) -> Option<Substitution> {
     let mut current = &args[0];
 
     // Walk through the list to count elements
-    while let Term::List(head, tail) = current {
+    while let Term::List(_head, tail) = current {
         count += 1;
         current = tail; // Move to the next element
     }
