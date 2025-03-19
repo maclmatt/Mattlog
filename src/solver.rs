@@ -84,6 +84,11 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             return builtin_member(args);
         }
 
+        if name == "between" && args.len() == 3 {
+            return builtin_between(&args);
+        }
+        
+
         let mut matching_clauses = vec![];
 
         for clause in &db.clauses {
@@ -290,3 +295,39 @@ fn builtin_member(args: &[Term]) -> Option<Substitution> {
     }
 }
 
+fn builtin_between(args: &[Term]) -> Option<Substitution> {
+    if args.len() != 3 {
+        return None; // Ensure correct arity
+    }
+
+    let low = match &args[0] {
+        Term::Integer(n) => *n,
+        _ => return None, // First argument must be an integer
+    };
+
+    let high = match &args[1] {
+        Term::Integer(n) => *n,
+        _ => return None, // Second argument must be an integer
+    };
+
+    let var = match &args[2] {
+        Term::Variable(v) => v.clone(),
+        _ => return None, // Third argument must be a variable
+    };
+
+    if low > high {
+        return None; // Invalid range
+    }
+
+    // Collect all values as substitutions
+    let results: Vec<String> = (low..=high)
+        .map(|n| format!("{}", n)) // Convert integers to strings
+        .collect();
+
+    let result_str = results.join("; "); // Format output like "1; 2; 3; 4"
+
+    let mut subs = Substitution::new();
+    subs.extend(var, Term::Constant(result_str));
+
+    Some(subs)
+}
