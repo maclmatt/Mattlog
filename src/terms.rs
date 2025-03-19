@@ -71,6 +71,14 @@ impl Term {
         })
     }
 
+    pub fn len(&self) -> usize {
+        match self {
+            Term::List(_, tail) => 1 + tail.len(),
+            Term::EmptyList => 0,
+            _ => panic!("len() called on non-list term"),
+        }
+    }
+
     pub fn to_vec(&self) -> Option<Vec<Term>> {
         let mut terms = vec![];
         let mut current = self;
@@ -84,6 +92,14 @@ impl Term {
         } else {
             None
         }
+    }
+
+    pub fn list_from_vec(mut elements: Vec<Term>) -> Term {
+        let mut list = Term::EmptyList;
+        while let Some(last) = elements.pop() {
+            list = Term::List(Box::new(last), Box::new(list));
+        }
+        list
     }
     
 }

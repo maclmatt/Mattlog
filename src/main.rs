@@ -6,6 +6,7 @@ mod solver;
 mod result;
 mod backtracking;
 mod environment;
+mod builtins;
 
 use database::Database;
 use parser::parser::{parse, parse_query};

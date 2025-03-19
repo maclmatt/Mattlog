@@ -3,6 +3,7 @@ use crate::terms::{Clause, Term, Expression};
 use crate::unification::{Substitution, unify};
 use crate::backtracking::{BacktrackingStack, ChoicePoint};
 use crate::environment::Environment;
+use crate::builtins::*;
 
 pub fn solve(query: &Expression, db: &Database, stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
     println!("DEBUG: solve() called with query {:?}", query);
@@ -78,16 +79,28 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             println!("DEBUG: Calling built-in append");
             return builtin_append(args);
         }
-
         if name == "member" && args.len() == 2 {
             println!("DEBUG: Calling built-in member");
             return builtin_member(args);
         }
-
         if name == "between" && args.len() == 3 {
-            return builtin_between(&args);
+            return builtin_between(args);
         }
-        
+        if name == "succ" && args.len() == 2 {
+            return builtin_succ(args)
+        }
+        if name == "min" && args.len() == 3 {
+            return builtin_min(args)
+        }
+        if name == "max" && args.len() == 3 {
+            return builtin_max(args)
+        }
+        if name == "reverse" && args.len() == 2 {
+            return builtin_reverse(args)
+        }
+        if name == "length" && args.len() == 2 {
+            return builtin_length(args)
+        }
 
         let mut matching_clauses = vec![];
 
@@ -140,7 +153,6 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
             }
         }
     }
-
     println!("DEBUG: No matching clause found, returning None");
     None
 }
@@ -216,118 +228,3 @@ fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
 // Operators we want to handle
 const RELATIONAL_OPERATORS: [&str; 6] = ["<", ">", "=<", ">=", "=", "\\="];
 
-fn builtin_append(args: &[Term]) -> Option<Substitution> {
-    if args.len() != 3 {
-        return None;
-    }
-
-    let list1 = &args[0];
-    let list2 = &args[1];
-    let result = &args[2];
-
-    // Try converting terms to Vec representations
-    match (list1.to_vec(), list2.to_vec(), result.to_vec()) {
-        (Some(vec1), Some(vec2), _) => {
-            // Both input lists known, unify combined with result
-            let combined = [vec1, vec2].concat();
-            let combined_term = Term::from_vec(&combined);
-            let mut subs = Substitution::new();
-            if unify(&args[2], &combined_term, &mut subs) {
-                Some(subs)
-            } else {
-                None
-            }
-        }
-        (Some(vec1), None, Some(result_vec)) => {
-            // First list and result known, calculate second list
-            if result_vec.starts_with(&vec1) {
-                let remaining = &result_vec[vec1.len()..];
-                let mut subs = Substitution::new();
-                if unify(&args[1], &Term::from_vec(remaining), &mut subs) {
-                    Some(subs)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
-        (None, Some(vec2), Some(result_vec)) => {
-            // Second list and result known, unify to find first list
-            if result_vec.ends_with(&vec2) {
-                let prefix = &result_vec[..result_vec.len() - vec2.len()];
-                let mut subs = Substitution::new();
-                if unify(&args[0], &Term::from_vec(prefix), &mut subs) {
-                    Some(subs)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
-        _ => None,
-    }
-}
-
-fn builtin_member(args: &[Term]) -> Option<Substitution> {
-    if args.len() != 2 {
-        return None; // Ensure correct arity
-    }
-
-    let element = &args[0];  // The item we're checking for
-    let list = &args[1];     // The list to check
-
-    match list {
-        Term::List(head, tail) => {
-            let mut subs = Substitution::new();
-
-            // First, check if element matches the head of the list
-            if unify(element, head, &mut subs) {
-                return Some(subs);
-            }
-
-            // Otherwise, check recursively in the tail
-            builtin_member(&[element.clone(), tail.as_ref().clone()])
-        }
-        Term::EmptyList => None, // Member of an empty list fails
-        _ => None, // Not a valid list structure
-    }
-}
-
-fn builtin_between(args: &[Term]) -> Option<Substitution> {
-    if args.len() != 3 {
-        return None; // Ensure correct arity
-    }
-
-    let low = match &args[0] {
-        Term::Integer(n) => *n,
-        _ => return None, // First argument must be an integer
-    };
-
-    let high = match &args[1] {
-        Term::Integer(n) => *n,
-        _ => return None, // Second argument must be an integer
-    };
-
-    let var = match &args[2] {
-        Term::Variable(v) => v.clone(),
-        _ => return None, // Third argument must be a variable
-    };
-
-    if low > high {
-        return None; // Invalid range
-    }
-
-    // Collect all values as substitutions
-    let results: Vec<String> = (low..=high)
-        .map(|n| format!("{}", n)) // Convert integers to strings
-        .collect();
-
-    let result_str = results.join("; "); // Format output like "1; 2; 3; 4"
-
-    let mut subs = Substitution::new();
-    subs.extend(var, Term::Constant(result_str));
-
-    Some(subs)
-}
