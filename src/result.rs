@@ -1,7 +1,9 @@
 use crate::terms::Term;
 use crate::unification::Substitution;
 
-pub fn get_result(query_text: &str, solution: Option<Substitution>) -> String {
+use std::time::{Duration, Instant};
+
+pub fn get_result(query_text: &str, solution: Option<Substitution>, duration: Duration) -> String {
     match solution {
         Some(subs) => {
             let query_vars = extract_query_vars(query_text);
@@ -15,6 +17,8 @@ pub fn get_result(query_text: &str, solution: Option<Substitution>) -> String {
 
             if results.is_empty() {
                 format!("{} => true", query_text)
+            } else if duration.as_millis() > 10 {
+                format!("{} => {}      |   Solve time: {:?}ms", query_text, results.join(", "), duration.as_millis())
             } else {
                 format!("{} => {}", query_text, results.join(", "))
             }

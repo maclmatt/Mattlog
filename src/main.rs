@@ -11,9 +11,11 @@ mod builtins;
 use database::Database;
 use parser::parser::{parse, parse_query};
 use terms::{Clause, Term, Expression};
+use backtracking::BacktrackingStack;
+
 use eframe::{egui, App, Frame};
 use std::fs;
-use backtracking::BacktrackingStack;
+use std::time::Instant;
 
 struct PrologApp {
     rules_text: String,
@@ -96,6 +98,8 @@ impl App for PrologApp {
                             if let Some(ref db) = self.db {
                                 match parse_query(&self.query_text) {
                                     Ok(parsed_query) => {
+                                        let start_time = Instant::now();
+
                                         let query = Term::from_tree_term(parsed_query);
                                         let query_expr = Expression::from_term(query);
 
@@ -116,8 +120,12 @@ impl App for PrologApp {
                                             }
                                         };
 
-                                        let result = result::get_result(&self.query_text, final_solution);
+                                        let duration = start_time.elapsed(); // End timer
+                                        if duration.as_millis() > 10 {
+                                            println!("DEBUG: Solve time {:?}ms", duration.as_millis());
+                                        }
 
+                                        let result = result::get_result(&self.query_text, final_solution, duration);
                                         self.query_history.push(result);
                                     }
                                     Err(_) => {
