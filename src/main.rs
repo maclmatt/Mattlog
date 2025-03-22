@@ -43,17 +43,6 @@ impl App for PrologApp {
                 ui.vertical(|ui| {
                     ui.heading("Rule Tree");
 
-                    ui.add_space(5.0);
-                    ui.group(|ui| {
-                        ui.add_sized(
-                            [320.0, 400.0],
-                            egui::TextEdit::multiline(&mut self.rules_text)
-                                .font(egui::TextStyle::Monospace),
-                        );
-                    });
-
-                    ui.add_space(10.0);
-
                     ui.horizontal_centered(|ui| {
                         if ui.button("Load Rules").clicked() {
                             let file_path = "program.pl";
@@ -79,6 +68,21 @@ impl App for PrologApp {
                             }
                         }
                     });
+
+                    ui.add_space(5.0);
+                    ui.group(|ui| {
+                        ui.set_min_height(500.0); // Give the group a minimum height visually
+                        egui::ScrollArea::vertical()
+                            .max_height(600.0)
+                            .show(ui, |ui| {
+                                ui.add_sized(
+                                    [380.0, 600.0],
+                                    egui::TextEdit::multiline(&mut self.rules_text)
+                                        .font(egui::TextStyle::Monospace),
+                                );
+                            });
+                    });
+                    
                 });
 
                 ui.separator();

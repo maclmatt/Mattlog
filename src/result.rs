@@ -1,7 +1,7 @@
 use crate::terms::Term;
 use crate::unification::Substitution;
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 pub fn get_result(query_text: &str, solution: Option<Substitution>, duration: Duration) -> String {
     match solution {
