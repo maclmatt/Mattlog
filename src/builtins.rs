@@ -56,23 +56,17 @@ pub fn builtin_append(args: &[Term]) -> Option<Substitution> {
 }
 
 pub fn builtin_member(args: &[Term]) -> Option<Substitution> {
-    if args.len() != 2 {
-        return None; // Ensure correct arity
-    }
-
-    let element = &args[0];  // The item we're checking for
-    let list = &args[1];     // The list to check
-
+    if args.len() != 2 { return None }  // Ensure correct arity
+    let element = &args[0];      // Element to check for
+    let list = &args[1];         // List to check
     match list {
         Term::List(head, tail) => {
             let mut subs = Substitution::new();
-
-            // First, check if element matches the head of the list
+            // Check if element matches the head of the list
             if unify(element, head, &mut subs) {
                 return Some(subs);
             }
-
-            // Otherwise, check recursively in the tail
+            // Check recursively in the tail
             builtin_member(&[element.clone(), tail.as_ref().clone()])
         }
         Term::EmptyList => None, // Member of an empty list fails
@@ -252,4 +246,46 @@ pub fn builtin_succ(args: &[Term]) -> Option<Substitution> {
     subs.extend(var, Term::Integer(number + 1));
 
     Some(subs)
+}
+
+pub fn builtin_sort(args: &[Term]) -> Option<Substitution> {
+    if args.len() != 2 {
+        return None;
+    }
+
+    // Ensure first argument is a list
+    let list_term = &args[0];
+    let var = match &args[1] {
+        Term::Variable(v) => v.clone(),
+        _ => return None, // Second argument must be a variable
+    };
+
+    // Convert the input term into a Vec<Term>
+    let vec = list_term.to_vec()?;
+
+    // Only allow lists of integers for simplicity
+    let mut values: Vec<_> = vec.iter()
+        .filter_map(|t| {
+            if let Term::Integer(i) = t {
+                Some(*i)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if values.len() != vec.len() {
+        return None; // Input list must only contain integers
+    }
+
+    values.sort();
+
+    let sorted_terms: Vec<Term> = values.into_iter().map(Term::Integer).collect();
+    let sorted_term = Term::list_from_vec(sorted_terms);
+
+    let mut subs = Substitution::new();
+    subs.extend(var, sorted_term);
+
+    Some(subs)
+
 }

@@ -14,11 +14,9 @@ impl BacktrackingStack {
     pub fn new() -> Self {
         BacktrackingStack { stack: Vec::new() }
     }
-
     pub fn push(&mut self, choice: ChoicePoint) {
         self.stack.push(choice);
     }
-
     pub fn pop(&mut self) -> Option<ChoicePoint> {
         self.stack.pop()
     }

@@ -52,14 +52,6 @@ impl Substitution {
         self.0.insert(var, term);
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&String, &Term)> {
-        self.0.iter()
-    }
-
     pub fn merge(&self, other: &Substitution) -> Option<Substitution> {
         if other.0.is_empty() {
             return Some(self.clone()); // If `other` is empty, return `self`
@@ -79,28 +71,7 @@ impl Substitution {
                 merged.0.insert(key.clone(), value.clone()); // Correctly update the HashMap
             }
         }
-
         Some(merged)
-    }
-
-    pub fn allow_merge(&mut self, other: &Substitution) -> bool {
-        // Collect all conflicting variables first (to avoid mutable borrowing errors)
-        let conflicts: Vec<_> = other.0.iter()
-            .filter(|(var, val)| self.0.get(var as &String).map_or(false, |existing| *existing != **val))
-            .collect();
-        
-        // If any conflicts exist, reject merge
-        if !conflicts.is_empty() {
-            for (var, val) in &conflicts {
-                println!("Merge failed: {} = {:?} conflicts with {:?}", var, self.0.get(var as &String), val);
-            }
-            return false;
-        }
-
-        // If no conflicts, safely extend the substitution
-        let initial_size = self.0.len();
-        self.0.extend(other.0.clone());
-        self.0.len() > initial_size // Return true if new substitutions were added
     }
 
     pub fn get(&self, var: &str) -> Option<&Term> {
@@ -109,24 +80,14 @@ impl Substitution {
 }
 
 pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
-    if term1 == term2 {
-        return true; //Stop immediately if the terms are already equal
-    }
-
-    //println!("Attempting to unify {:?} and {:?}", term1, term2);
+    if term1 == term2 { return true } // Stop immediately if the terms are already equal
     match (term1, term2) {
         (Term::Variable(x), t) | (t, Term::Variable(x)) => {
-            if t != term1 && occurs_check(x, t) {
-                return false;
-            }
-            
-            //NEW CHECK: If `x` is already bound, ensure it doesn't overwrite another constant
+            if t != term1 && occurs_check(x, t) { return false }
             if let Some(existing) = subst.get(x) {
-                if existing != t {
-                    return false;
-                }
+                if existing != t { return false } // Doesn't overwrite another constant if 'x' is already bound
             }
-            subst.extend(x.clone(), t.clone());
+            subst.extend(x.clone(), t.clone()); // Variable unification
             return true;
         }
         (Term::Constant(a), Term::Constant(b)) => a == b, // Constant unification
@@ -143,9 +104,7 @@ pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
 }
 
 fn unify_lists(list1: &[Term], list2: &[Term], subst: &mut Substitution) -> bool {
-    if list1.len() != list2.len() {
-        return false;
-    }
+    if list1.len() != list2.len() { return false }
     list1.iter().zip(list2.iter()).all(|(t1, t2)| unify(t1, t2, subst))
 }
 

@@ -32,39 +32,6 @@ impl Term {
         }
     }
 
-    // Remove this unused function from terms.rs entirely:
-    // pub fn from_tree_expr(tree_expr: TreeExpr) -> Self {
-    //     match *tree_expr {
-    //         ExprKind::Term(term) => Term::from_tree_term(term),
-    //         ExprKind::Conjunct(lhs, rhs) => {
-    //             Term::Compound("and".to_string(), vec![
-    //                 Term::from_tree_expr(lhs),
-    //                 Term::from_tree_expr(rhs)
-    //             ])
-    //         }
-    //     }
-    // }
-
-
-    pub fn apply(&self, subs: &Substitution) -> Term {
-        match self {
-            Term::Variable(var) => {
-                if let Some(replacement) = subs.get(var) {
-                    replacement.clone()
-                } else {
-                    self.clone()
-                }
-            }
-            Term::Compound(name, args) => {
-                Term::Compound(name.clone(), args.iter().map(|a| a.apply(subs)).collect())
-            }
-            Term::List(head, tail) => {
-                Term::List(Box::new(head.apply(subs)), Box::new(tail.apply(subs)))
-            }
-            _ => self.clone()
-        }
-    }
-
     pub fn from_vec(vec: &[Term]) -> Self {
         vec.iter().rev().fold(Term::EmptyList, |acc, x| {
             Term::List(Box::new(x.clone()), Box::new(acc))
@@ -193,15 +160,6 @@ mod tests {
                 ]
             )
         );
-    }
-
-    #[test]
-    fn test_apply_substitution() {
-        let mut subs = Substitution::new();
-        subs.extend("X".to_string(), Term::Constant("john".to_string()));
-
-        let term = Term::Variable("X".to_string()).apply(&subs);
-        assert_eq!(term, Term::Constant("john".to_string()));
     }
 
     #[test]

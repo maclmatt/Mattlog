@@ -5,29 +5,29 @@ use crate::backtracking::{BacktrackingStack, ChoicePoint};
 use crate::environment::Environment;
 use crate::builtins::*;
 
-pub fn solve(query: &Expression, db: &Database, stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
+pub fn solve(query: &Expression, db: &Database, back_stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
     println!("DEBUG: solve() called with query {:?}", query);
 
     match query {
         Expression::Term(term) => {
-            let result = solve_term(term, db, stack, counter);
+            let result = solve_term(term, db, back_stack, counter);
             println!("DEBUG: solve_term returned {:?}", result);
             return result;
         }
         Expression::Conjunct(lhs, rhs) => {
             println!("DEBUG: Solving LHS: {:?}", lhs);
-            if let Some(lhs_subs) = solve(lhs, db, stack, counter) {
+            if let Some(lhs_subs) = solve(lhs, db, back_stack, counter) {
                 let applied_rhs = rhs.apply(&lhs_subs);
                 println!("DEBUG: LHS succeeded, applying to RHS: {:?}", applied_rhs);
 
-                if let Some(rhs_subs) = solve(&applied_rhs, db, stack, counter) {
+                if let Some(rhs_subs) = solve(&applied_rhs, db, back_stack, counter) {
                     println!("DEBUG: RHS succeeded, merging substitutions");
                     return lhs_subs.merge(&rhs_subs);
                 }
             }
-            while let Some(choice) = stack.pop() {
+            while let Some(choice) = back_stack.pop() {
                 println!("DEBUG: Backtracking to {:?}", choice.alternatives[0]);
-                return solve(&Expression::Term(choice.alternatives[0].clone()), db, stack, counter);
+                return solve(&Expression::Term(choice.alternatives[0].clone()), db, back_stack, counter);
             }
             println!("DEBUG: Conjunct failed, returning None");
             None
@@ -35,7 +35,7 @@ pub fn solve(query: &Expression, db: &Database, stack: &mut BacktrackingStack, c
     }
 }
 
-fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
+fn solve_term(term: &Term, db: &Database, back_stack: &mut BacktrackingStack, counter: &mut usize) -> Option<Substitution> {
     println!("DEBUG: solve_term() called with term {:?}", term);
     let mut subs = Substitution::new();
 
@@ -101,6 +101,9 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
         if name == "length" && args.len() == 2 {
             return builtin_length(args)
         }
+        if name == "sort" && args.len() == 2 {
+            return builtin_sort(args)
+        }
 
         let mut matching_clauses = vec![];
 
@@ -123,7 +126,7 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
         if !matching_clauses.is_empty() {
             println!("DEBUG: Found matching clauses, pushing alternatives to stack");
             for (_head, _body) in &matching_clauses[1..] {
-                stack.push(ChoicePoint {
+                back_stack.push(ChoicePoint {
                     env: Environment::new(),
                     alternatives: vec![Term::Compound(name.clone(), args.clone())],
                 });
@@ -138,7 +141,7 @@ fn solve_term(term: &Term, db: &Database, stack: &mut BacktrackingStack, counter
 
                 *counter += 1; // Increment counter for recursive calls
 
-                if let Some(body_subs) = solve(&applied_body, db, stack, counter) {
+                if let Some(body_subs) = solve(&applied_body, db, back_stack, counter) {
                     let merged = local_subs.merge(&body_subs);
                 
                     if merged.is_none() {
