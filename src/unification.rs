@@ -85,17 +85,19 @@ pub fn unify(term1: &Term, term2: &Term, subst: &mut Substitution) -> bool {
         (Term::Variable(x), t) | (t, Term::Variable(x)) => {
             if t != term1 && occurs_check(x, t) { return false }
             if let Some(existing) = subst.get(x) {
-                if existing != t { return false } // Doesn't overwrite another constant if 'x' is already bound
+                if existing != t { return false } // Stops an overwrite if 'x' is already bound
             }
             subst.extend(x.clone(), t.clone()); // Variable unification
             return true;
         }
         (Term::Constant(a), Term::Constant(b)) => a == b, // Constant unification
         (Term::Integer(a), Term::Integer(b)) => a == b, // Integer unification
-        (Term::Compound(name1, args1), Term::Compound(name2, args2)) => {
+        (Term::Compound(name1, args1), 
+        Term::Compound(name2, args2)) => {
             name1 == name2 && unify_lists(args1, args2, subst)
         }
-        (Term::List(head1, tail1), Term::List(head2, tail2)) => {
+        (Term::List(head1, tail1), 
+        Term::List(head2, tail2)) => {
             unify(head1, head2, subst) && unify(tail1, tail2, subst)
         }
         (Term::EmptyList, Term::EmptyList) => true, // Empty lists are equal

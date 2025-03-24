@@ -230,4 +230,3 @@ fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
 
 // Operators we want to handle
 const RELATIONAL_OPERATORS: [&str; 6] = ["<", ">", "=<", ">=", "=", "\\="];
-
