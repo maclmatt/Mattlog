@@ -81,4 +81,3 @@ MIT License.
 
 - [conlog](https://github.com/transistorfet/conlog) – for the original parser
 - [egui](https://github.com/emilk/egui) – for the GUI framework
-```
