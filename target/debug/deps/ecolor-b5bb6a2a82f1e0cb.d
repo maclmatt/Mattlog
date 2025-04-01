@@ -1,0 +1,10 @@
+/Users/mayamatthews/Documents/AYR3UoE/DISS/Mattlog/target/debug/deps/libecolor-b5bb6a2a82f1e0cb.rmeta: /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/lib.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/color32.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hsva_gamma.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hsva.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/rgba.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hex_color_runtime.rs
+
+/Users/mayamatthews/Documents/AYR3UoE/DISS/Mattlog/target/debug/deps/ecolor-b5bb6a2a82f1e0cb.d: /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/lib.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/color32.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hsva_gamma.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hsva.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/rgba.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hex_color_runtime.rs
+
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/lib.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/color32.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hsva_gamma.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hsva.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/rgba.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ecolor-0.27.2/src/hex_color_runtime.rs:

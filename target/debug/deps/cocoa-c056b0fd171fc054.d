@@ -1,0 +1,10 @@
+/Users/mayamatthews/Documents/AYR3UoE/DISS/Mattlog/target/debug/deps/libcocoa-c056b0fd171fc054.rmeta: /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/lib.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/appkit.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/base.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/foundation.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/quartzcore.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/macros.rs
+
+/Users/mayamatthews/Documents/AYR3UoE/DISS/Mattlog/target/debug/deps/cocoa-c056b0fd171fc054.d: /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/lib.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/appkit.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/base.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/foundation.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/quartzcore.rs /Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/macros.rs
+
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/lib.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/appkit.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/base.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/foundation.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/quartzcore.rs:
+/Users/mayamatthews/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.25.0/src/macros.rs:
