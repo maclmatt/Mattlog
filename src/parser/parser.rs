@@ -212,6 +212,8 @@ fn parse_comma_separated(input: &mut Peekable<Lexer>) -> Result<Vec<Term>, Parse
     Ok(list)
 }
 
+// Changes start here
+
 const OPERATORS: [(&str, u8); 12] = [
     (",", 1),
     ("=", 2), ("\\=", 2),
@@ -287,6 +289,8 @@ fn parse_term_with_prec(input: &mut Peekable<Lexer>, min_prec: u8) -> Result<Ter
 fn parse_term(input: &mut Peekable<Lexer>) -> Result<Term, ParseError> {
     parse_term_with_prec(input, 0)
 }
+
+// Changes end here
 
 
 fn parse_expression(input: &mut Peekable<Lexer>) -> Result<Expr, ParseError> {
