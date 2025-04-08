@@ -230,3 +230,106 @@ fn evaluate_relation(op: &str, left: &Term, right: &Term) -> Option<bool> {
 
 // Operators we want to handle
 const RELATIONAL_OPERATORS: [&str; 6] = ["<", ">", "=<", ">=", "=", "\\="];
+
+#[test]
+fn test_fact_matching() {
+    use crate::terms::{Term, Clause, Expression};
+    use crate::database::Database;
+    use crate::backtracking::BacktrackingStack;
+
+    let db = Database::new(vec![
+        Clause::Fact(Term::Compound("parent".into(), vec![
+            Term::Constant("john".into()),
+            Term::Constant("mary".into()),
+        ]))
+    ]);
+
+    let query = Expression::Term(Term::Compound("parent".into(), vec![
+        Term::Constant("john".into()),
+        Term::Variable("X".into()),
+    ]));
+
+    let mut back_stack = BacktrackingStack::new();
+    let mut counter = 0;
+    let result = crate::solver::solve(&query, &db, &mut back_stack, &mut counter);
+
+    assert!(result.is_some());
+    let subs = result.unwrap();
+    assert_eq!(subs.get("X"), Some(&Term::Constant("mary".into())));
+}
+
+#[test]
+fn test_grandparent_rule() {
+    use crate::terms::{Term, Clause, Expression};
+    use crate::database::Database;
+    use crate::backtracking::BacktrackingStack;
+
+    let db = Database::new(vec![
+        Clause::Fact(Term::Compound("parent".into(), vec![
+            Term::Constant("john".into()),
+            Term::Constant("mary".into()),
+        ])),
+        Clause::Fact(Term::Compound("parent".into(), vec![
+            Term::Constant("mary".into()),
+            Term::Constant("alice".into()),
+        ])),
+        Clause::Rule(
+            Term::Compound("grandparent".into(), vec![
+                Term::Variable("X".into()),
+                Term::Variable("Y".into()),
+            ]),
+            Expression::Conjunct(
+                Box::new(Expression::Term(Term::Compound("parent".into(), vec![
+                    Term::Variable("X".into()),
+                    Term::Variable("Z".into()),
+                ]))),
+                Box::new(Expression::Term(Term::Compound("parent".into(), vec![
+                    Term::Variable("Z".into()),
+                    Term::Variable("Y".into()),
+                ])))
+            )
+        ),
+    ]);
+
+    let query = Expression::Term(Term::Compound("grandparent".into(), vec![
+        Term::Variable("X".into()),
+        Term::Constant("alice".into()),
+    ]));
+
+    let mut back_stack = BacktrackingStack::new();
+    let mut counter = 0;
+    let result = crate::solver::solve(&query, &db, &mut back_stack, &mut counter);
+
+    assert!(result.is_some());
+    let subs = result.unwrap();
+    assert_eq!(subs.get("X"), Some(&Term::Constant("john".into())));
+}
+
+#[test]
+fn test_arithmetic_is_operator() {
+    use crate::terms::{Term, Clause, Expression};
+    use crate::database::Database;
+    use crate::backtracking::BacktrackingStack;
+
+    let db = Database::new(vec![
+        Clause::Rule(
+            Term::Compound("test".into(), vec![Term::Variable("X".into())]),
+            Expression::Term(Term::Compound("is".into(), vec![
+                Term::Variable("X".into()),
+                Term::Compound("+".into(), vec![Term::Integer(2), Term::Integer(3)])
+            ])),
+        )
+    ]);
+
+    let query = Expression::Term(Term::Compound("test".into(), vec![
+        Term::Variable("X".into()),
+    ]));
+
+    let mut back_stack = BacktrackingStack::new();
+    let mut counter = 0;
+    let result = crate::solver::solve(&query, &db, &mut back_stack, &mut counter);
+
+    assert!(result.is_some());
+    let subs = result.unwrap();
+    assert_eq!(subs.get("X"), Some(&Term::Integer(5)));
+}

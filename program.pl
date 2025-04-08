@@ -30,11 +30,3 @@ fib(N, F) :-
     fib(N1, F1),
     fib(N2, F2),
     F is F1 + F2.
-
-
-insert(X, [], [X]).
-insert(X, [Y|T], [X,Y|T]) :- X =< Y.
-insert(X, [Y|T], [Y|Z]) :- X > Y, insert(X, T, Z).
-
-sort([], []).
-sort([H|T], Sorted) :- sort(T, SortedTail), insert(H, SortedTail, Sorted).

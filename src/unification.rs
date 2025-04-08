@@ -59,9 +59,7 @@ impl Substitution {
         if self.0.is_empty() {
             return Some(other.clone()); // If `self` is empty, return `other`
         }
-
         let mut merged = self.clone();
-        
         for (key, value) in &other.0 {
             if let Some(existing) = merged.0.get(key) {
                 if existing != value {
