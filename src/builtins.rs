@@ -289,3 +289,124 @@ pub fn builtin_sort(args: &[Term]) -> Option<Substitution> {
     Some(subs)
 
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::terms::Term;
+
+    #[test]
+    fn test_builtin_append_basic() {
+        let list1 = Term::list_from_vec(vec![Term::Integer(1), Term::Integer(2)]);
+        let list2 = Term::list_from_vec(vec![Term::Integer(3)]);
+        let result = Term::list_from_vec(vec![Term::Integer(1), Term::Integer(2), Term::Integer(3)]);
+
+        let args = vec![list1, list2, result];
+        let subs = builtin_append(&args);
+        assert!(subs.is_some());
+    }
+
+    #[test]
+    fn test_builtin_member_found() {
+        let list = Term::list_from_vec(vec![
+            Term::Integer(1),
+            Term::Integer(2),
+            Term::Integer(3),
+        ]);
+        let args = vec![Term::Integer(2), list];
+        let subs = builtin_member(&args);
+        assert!(subs.is_some());
+    }
+
+    #[test]
+    fn test_builtin_member_not_found() {
+        let list = Term::list_from_vec(vec![Term::Integer(1), Term::Integer(3)]);
+        let args = vec![Term::Integer(2), list];
+        let subs = builtin_member(&args);
+        assert!(subs.is_none());
+    }
+
+    #[test]
+    fn test_builtin_between_valid_range() {
+        let args = vec![
+            Term::Integer(1),
+            Term::Integer(3),
+            Term::Variable("X".into()),
+        ];
+        let subs = builtin_between(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("X"), Some(&Term::Constant("1; 2; 3".into())));
+    }
+
+    #[test]
+    fn test_builtin_length_correct() {
+        let list = Term::list_from_vec(vec![Term::Integer(1), Term::Integer(2), Term::Integer(3)]);
+        let args = vec![list, Term::Variable("N".into())];
+        let subs = builtin_length(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("N"), Some(&Term::Integer(3)));
+    }
+
+    #[test]
+    fn test_builtin_reverse() {
+        let list = Term::list_from_vec(vec![Term::Integer(1), Term::Integer(2)]);
+        let expected = Term::list_from_vec(vec![Term::Integer(2), Term::Integer(1)]);
+        let args = vec![list, Term::Variable("X".into())];
+        let subs = builtin_reverse(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("X"), Some(&expected));
+    }
+
+    #[test]
+    fn test_builtin_max() {
+        let args = vec![
+            Term::Integer(3),
+            Term::Integer(5),
+            Term::Variable("M".into()),
+        ];
+        let subs = builtin_max(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("M"), Some(&Term::Integer(5)));
+    }
+
+    #[test]
+    fn test_builtin_min() {
+        let args = vec![
+            Term::Integer(3),
+            Term::Integer(5),
+            Term::Variable("M".into()),
+        ];
+        let subs = builtin_min(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("M"), Some(&Term::Integer(3)));
+    }
+
+    #[test]
+    fn test_builtin_succ() {
+        let args = vec![
+            Term::Integer(4),
+            Term::Variable("X".into()),
+        ];
+        let subs = builtin_succ(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("X"), Some(&Term::Integer(5)));
+    }
+
+    #[test]
+    fn test_builtin_sort() {
+        let list = Term::list_from_vec(vec![
+            Term::Integer(3),
+            Term::Integer(1),
+            Term::Integer(2),
+        ]);
+        let expected = Term::list_from_vec(vec![
+            Term::Integer(1),
+            Term::Integer(2),
+            Term::Integer(3),
+        ]);
+        let args = vec![list, Term::Variable("Sorted".into())];
+        let subs = builtin_sort(&args);
+        assert!(subs.is_some());
+        assert_eq!(subs.unwrap().get("Sorted"), Some(&expected));
+    }
+}
