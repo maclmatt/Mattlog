@@ -80,7 +80,7 @@ impl fmt::Display for Term {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Clause {
     Fact(Term),
     Rule(Term, Expression),
@@ -98,7 +98,7 @@ impl Clause {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Term(Term),
     Conjunct(Box<Expression>, Box<Expression>),  // Handles multiple conditions
@@ -131,6 +131,7 @@ impl Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::unification::Substitution;
 
     #[test]
     fn test_create_constant() {
@@ -163,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn test_list_from_vec() {
+    fn test_list_from_vec_and_back() {
         let terms = vec![
             Term::Integer(1),
             Term::Integer(2),
@@ -175,11 +176,68 @@ mod tests {
     }
 
     #[test]
-    fn test_display() {
+    fn test_display_compound() {
         let term = Term::Compound("likes".to_string(), vec![
             Term::Constant("john".to_string()),
             Term::Constant("pizza".to_string()),
         ]);
         assert_eq!(format!("{}", term), "likes(john, pizza)");
     }
+
+    #[test]
+    fn test_expression_from_term() {
+        let term = Term::Variable("X".to_string());
+        let expr = Expression::from_term(term.clone());
+        assert_eq!(expr, Expression::Term(term));
+    }
+
+    #[test]
+    fn test_expression_apply_substitution() {
+        let term = Term::Variable("X".to_string());
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(5));
+        let expr = Expression::Term(term);
+        let applied = expr.apply(&subs);
+        assert_eq!(applied, Expression::Term(Term::Integer(5)));
+    }
+
+    #[test]
+    fn test_conjunct_apply_substitution() {
+        let left = Expression::Term(Term::Variable("X".to_string()));
+        let right = Expression::Term(Term::Variable("Y".to_string()));
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(1));
+        subs.extend("Y".to_string(), Term::Integer(2));
+        let conjunct = Expression::Conjunct(Box::new(left), Box::new(right));
+        let applied = conjunct.apply(&subs);
+        assert_eq!(
+            applied,
+            Expression::Conjunct(
+                Box::new(Expression::Term(Term::Integer(1))),
+                Box::new(Expression::Term(Term::Integer(2)))
+            )
+        );
+    }
+
+    #[test]
+    fn test_clause_fact_creation() {
+        let term = Term::Constant("hello".to_string());
+        let clause = Clause::Fact(term.clone());
+        assert_eq!(clause, Clause::Fact(term));
+    }
+
+    #[test]
+    fn test_clause_rule_creation() {
+        let head = Term::Compound("parent".to_string(), vec![
+            Term::Variable("X".to_string()),
+            Term::Variable("Y".to_string()),
+        ]);
+        let body = Expression::Conjunct(
+            Box::new(Expression::Term(Term::Constant("father".to_string()))),
+            Box::new(Expression::Term(Term::Constant("mother".to_string()))),
+        );
+        let clause = Clause::Rule(head.clone(), body.clone());
+        assert_eq!(clause, Clause::Rule(head, body));
+    }
 }
+

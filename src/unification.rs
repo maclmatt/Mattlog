@@ -116,3 +116,122 @@ fn occurs_check(var: &str, term: &Term) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::terms::Term;
+
+    #[test]
+    fn test_extend_and_get() {
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(5));
+        assert_eq!(subs.get("X"), Some(&Term::Integer(5)));
+    }
+
+    #[test]
+    fn test_resolve_simple_variable() {
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(3));
+        let resolved = subs.resolve(&Term::Variable("X".to_string()));
+        assert_eq!(resolved, Term::Integer(3));
+    }
+
+    #[test]
+    fn test_resolve_nested_variables() {
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Variable("Y".to_string()));
+        subs.extend("Y".to_string(), Term::Integer(7));
+        let resolved = subs.resolve(&Term::Variable("X".to_string()));
+        assert_eq!(resolved, Term::Integer(7));
+    }
+
+    #[test]
+    fn test_apply_to_compound() {
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(2));
+        let term = Term::Compound("f".to_string(), vec![Term::Variable("X".to_string())]);
+        let applied = subs.apply(&term);
+        assert_eq!(applied, Term::Compound("f".to_string(), vec![Term::Integer(2)]));
+    }
+
+    #[test]
+    fn test_merge_successful() {
+        let mut subs1 = Substitution::new();
+        subs1.extend("X".to_string(), Term::Integer(5));
+        let mut subs2 = Substitution::new();
+        subs2.extend("Y".to_string(), Term::Integer(10));
+
+        let merged = subs1.merge(&subs2).unwrap();
+        assert_eq!(merged.get("X"), Some(&Term::Integer(5)));
+        assert_eq!(merged.get("Y"), Some(&Term::Integer(10)));
+    }
+
+    #[test]
+    fn test_merge_conflict() {
+        let mut subs1 = Substitution::new();
+        subs1.extend("X".to_string(), Term::Integer(5));
+        let mut subs2 = Substitution::new();
+        subs2.extend("X".to_string(), Term::Integer(6));
+
+        assert!(subs1.merge(&subs2).is_none());
+    }
+
+    #[test]
+    fn test_unify_constants() {
+        let mut subs = Substitution::new();
+        let t1 = Term::Constant("a".to_string());
+        let t2 = Term::Constant("a".to_string());
+        assert!(unify(&t1, &t2, &mut subs));
+    }
+
+    #[test]
+    fn test_unify_variable_with_constant() {
+        let mut subs = Substitution::new();
+        let t1 = Term::Variable("X".to_string());
+        let t2 = Term::Constant("a".to_string());
+        assert!(unify(&t1, &t2, &mut subs));
+        assert_eq!(subs.get("X"), Some(&Term::Constant("a".to_string())));
+    }
+
+    #[test]
+    fn test_unify_compound_terms() {
+        let mut subs = Substitution::new();
+        let t1 = Term::Compound("f".to_string(), vec![Term::Variable("X".to_string()), Term::Integer(2)]);
+        let t2 = Term::Compound("f".to_string(), vec![Term::Integer(1), Term::Variable("Y".to_string())]);
+        assert!(unify(&t1, &t2, &mut subs));
+        assert_eq!(subs.get("X"), Some(&Term::Integer(1)));
+        assert_eq!(subs.get("Y"), Some(&Term::Integer(2)));
+    }
+
+    #[test]
+    fn test_unify_lists() {
+        let mut subs = Substitution::new();
+        let t1 = Term::List(
+            Box::new(Term::Variable("X".to_string())),
+            Box::new(Term::EmptyList),
+        );
+        let t2 = Term::List(
+            Box::new(Term::Integer(5)),
+            Box::new(Term::EmptyList),
+        );
+        assert!(unify(&t1, &t2, &mut subs));
+        assert_eq!(subs.get("X"), Some(&Term::Integer(5)));
+    }
+
+    #[test]
+    fn test_unify_fails_on_different_functor_names() {
+        let mut subs = Substitution::new();
+        let t1 = Term::Compound("f".to_string(), vec![Term::Integer(1)]);
+        let t2 = Term::Compound("g".to_string(), vec![Term::Integer(1)]);
+        assert!(!unify(&t1, &t2, &mut subs));
+    }
+
+    #[test]
+    fn test_occurs_check_blocks_recursive_binding() {
+        let mut subs = Substitution::new();
+        let t1 = Term::Variable("X".to_string());
+        let t2 = Term::Compound("f".to_string(), vec![Term::Variable("X".to_string())]);
+        assert!(!unify(&t1, &t2, &mut subs)); // Should fail due to occurs check
+    }
+}

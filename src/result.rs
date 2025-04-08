@@ -65,3 +65,72 @@ fn format_term(term: &Term, subs: &Substitution) -> String {
         Term::EmptyList => "[]".to_string(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::terms::Term;
+    use crate::unification::Substitution;
+    use std::time::Duration;
+
+    #[test]
+    fn test_result_with_variable_binding() {
+        let query = "?- X = 1.";
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(1));
+
+        let result = get_result(query, Some(subs), Duration::from_millis(5));
+        assert_eq!(result, "?- X = 1. => X = 1");
+    }
+
+    #[test]
+    fn test_result_with_multiple_bindings_and_long_duration() {
+        let query = "?- X = 1, Y = foo.";
+        let mut subs = Substitution::new();
+        subs.extend("X".to_string(), Term::Integer(1));
+        subs.extend("Y".to_string(), Term::Constant("foo".to_string()));
+
+        let result = get_result(query, Some(subs), Duration::from_millis(50));
+        assert!(
+            result.starts_with("?- X = 1, Y = foo. => X = 1, Y = foo"),
+            "Expected formatted output with bindings"
+        );
+        assert!(result.contains("Solve time: 50ms"), "Expected duration in output");
+    }
+
+    #[test]
+    fn test_result_with_true_output_when_no_vars() {
+        let query = "?- foo(bar).";
+        let subs = Substitution::new();
+
+        let result = get_result(query, Some(subs), Duration::from_millis(2));
+        assert_eq!(result, "?- foo(bar). => true");
+    }
+
+    #[test]
+    fn test_result_with_no_solution() {
+        let query = "?- X = 1.";
+        let result = get_result(query, None, Duration::from_millis(0));
+        assert_eq!(result, "?- X = 1. => false");
+    }
+
+    #[test]
+    fn test_result_with_list_binding() {
+        let query = "?- X = [1, 2, 3].";
+        let mut subs = Substitution::new();
+        let list = Term::List(
+            Box::new(Term::Integer(1)),
+            Box::new(Term::List(
+                Box::new(Term::Integer(2)),
+                Box::new(Term::List(
+                    Box::new(Term::Integer(3)),
+                    Box::new(Term::EmptyList),
+                )),
+            )),
+        );
+        subs.extend("X".to_string(), list);
+
+        let result = get_result(query, Some(subs), Duration::from_millis(3));
+        assert!(result.contains("[1, 2, 3]"));
+    }
+}
